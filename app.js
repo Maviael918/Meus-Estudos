@@ -27,14 +27,11 @@ const initialState = {
   day: 18, month: 3, completedMissions: 0, expanded: false,
   bank: { accountNumber: null, openedAt: null, loan: null, transactions: [] },
   payroll: { employeeCount: 3, weeklySalaryCents: 50000, teacherCount: 0, teacherWeeklySalaryCents: 80000, daysUntilPayment: 7, paymentsMade: 0 },
-<<<<<<< HEAD
   simulation: {
     questionRewardCents: 10000, waterBillCents: 12000, energyBillCents: 18000, propertyTaxCents: 7500,
     waterResidentsPerPoint: 12, energyResidentsPerPoint: 8,
     waterLevel: 100, energyLevel: 100, waterConnected: true, energyConnected: true, propertyTaxPaid: true
   },
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   education: { consecutiveMistakes: 0 },
   disasters: { daysUntilEvent: 7 + Math.floor(Math.random() * 8), eventsTriggered: 0 },
   study: { challengeCursor: 0, financeCursor: 0, seed: createStudySeed() }
@@ -139,7 +136,6 @@ function normalizeState(candidate) {
     paymentsMade: Number.isSafeInteger(savedPayroll.paymentsMade) && savedPayroll.paymentsMade >= 0
       ? savedPayroll.paymentsMade : initialState.payroll.paymentsMade
   };
-<<<<<<< HEAD
   const savedSimulation = candidate.simulation && typeof candidate.simulation === "object" ? candidate.simulation : {};
   const simulation = {
     questionRewardCents: Number.isSafeInteger(savedSimulation.questionRewardCents)
@@ -171,8 +167,6 @@ function normalizeState(candidate) {
     propertyTaxPaid: typeof savedSimulation.propertyTaxPaid === "boolean"
       ? savedSimulation.propertyTaxPaid : initialState.simulation.propertyTaxPaid
   };
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   const savedEducation = candidate.education && typeof candidate.education === "object" ? candidate.education : {};
   const education = {
     consecutiveMistakes: Number.isSafeInteger(savedEducation.consecutiveMistakes) && savedEducation.consecutiveMistakes >= 0
@@ -198,10 +192,7 @@ function normalizeState(candidate) {
     built,
     bank: { accountNumber, openedAt: typeof bank.openedAt === "string" ? bank.openedAt : null, loan, transactions },
     payroll,
-<<<<<<< HEAD
     simulation,
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
     education,
     disasters,
     study: { challengeCursor, financeCursor, seed }
@@ -445,10 +436,7 @@ function updateLoanPreview() {
 
 function render() {
   updateServerClockDisplay();
-<<<<<<< HEAD
   byId("simulation-settings").disabled = !cloudReady;
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   byId("practice-interest").disabled = !cloudReady;
   byId("open-bank-account").disabled = !cloudReady || Boolean(state.bank.accountNumber);
   byId("loan-amount").disabled = !cloudReady;
@@ -457,10 +445,7 @@ function render() {
   byId("request-loan").disabled = !cloudReady;
   byId("money-value").textContent = formatBRL(state.money);
   updatePayrollDisplay();
-<<<<<<< HEAD
   updateSimulationDisplay();
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   byId("population-value").textContent = formatNumber(state.population);
   byId("materials-value").textContent = formatNumber(state.materials);
   byId("happiness-value").innerHTML = `${state.happiness}<small>%</small>`;
@@ -505,7 +490,6 @@ function render() {
   save();
 }
 
-<<<<<<< HEAD
 function updateSimulationDisplay() {
   const simulation = state.simulation;
   byId("water-status").textContent = simulation.waterConnected ? "Ativa" : "Cortada";
@@ -575,8 +559,6 @@ function saveSimulationSettings(event) {
   showToast("Configurações salvas. As contas atualizadas vencem no próximo dia 1.");
 }
 
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 function updatePayrollDisplay() {
   const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents
     + state.payroll.teacherCount * state.payroll.teacherWeeklySalaryCents;
@@ -859,7 +841,6 @@ function registerWrongAnswer(modal, feedback) {
   save();
 }
 
-<<<<<<< HEAD
 function grantQuestionReward() {
   const rewardCents = state.simulation.questionRewardCents;
   state.money += rewardCents;
@@ -869,8 +850,6 @@ function grantQuestionReward() {
   return rewardCents;
 }
 
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 function hireTeacher(modal) {
   if (!requireLiveCity()) return;
   if (state.payroll.teacherCount > 0 || state.education.consecutiveMistakes < 5) return;
@@ -928,36 +907,22 @@ function submitFinanceAnswer() {
     registerWrongAnswer("finance", feedback);
     return;
   }
-<<<<<<< HEAD
   if (purpose === "loan" && state.bank.loan && ["active", "overdue"].includes(state.bank.loan.status)) {
     feedback.textContent = "O empréstimo atual foi iniciado enquanto você respondia. Conclua a parcela antes de solicitar outro.";
     feedback.className = "quiz-feedback";
     return;
   }
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 
   state.education.consecutiveMistakes = 0;
   playAlertSound("correct");
   updateTeacherSupport();
   state.knowledge += 2;
-<<<<<<< HEAD
   const rewardCents = grantQuestionReward();
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   feedback.textContent = `Correto! ${question.explanation}`;
   feedback.className = "quiz-feedback correct";
   byId("finance-submit").disabled = true;
 
   if (purpose === "loan" && loanOffer) {
-<<<<<<< HEAD
-=======
-    if (state.bank.loan && ["active", "overdue"].includes(state.bank.loan.status)) {
-      feedback.textContent = "O empréstimo atual foi iniciado enquanto você respondia. Conclua a parcela antes de solicitar outro.";
-      feedback.className = "quiz-feedback";
-      return;
-    }
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
     const calculation = window.financeQuestionBank.calculateLoan(
       loanOffer.amountCents,
       loanOffer.monthlyRateBps,
@@ -990,11 +955,7 @@ function submitFinanceAnswer() {
     render();
     showToast(wasLoan
       ? `Desafio correto! ${formatBRL(loanOffer.amountCents)} foram adicionados à conta.`
-<<<<<<< HEAD
       : `Desafio correto! Você ganhou ${formatBRL(rewardCents)} e 2 pontos de conhecimento.`);
-=======
-      : "Desafio correto! Você ganhou 2 pontos de conhecimento.");
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   }, 850);
 }
 
@@ -1009,10 +970,7 @@ function submitAnswer() {
   state.education.consecutiveMistakes = 0;
   playAlertSound("correct");
   updateTeacherSupport();
-<<<<<<< HEAD
   const rewardCents = grantQuestionReward();
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   if (activeQuiz.type === "expansion") {
     state.expanded = true;
     byId("quiz-feedback").textContent = `Correto! ${activeQuiz.explain}`;
@@ -1020,11 +978,7 @@ function submitAnswer() {
     byId("quiz-submit").disabled = true;
     window.setTimeout(() => {
       closeQuiz();
-<<<<<<< HEAD
       showToast(`Nova região desbloqueada! Você ganhou ${formatBRL(rewardCents)} e agora tem mais terrenos para construir.`);
-=======
-      showToast("Nova região desbloqueada! Agora você tem mais terrenos para construir.");
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
       render();
     }, 850);
     return;
@@ -1061,11 +1015,7 @@ function submitAnswer() {
   byId("quiz-submit").disabled = true;
   window.setTimeout(() => {
     closeQuiz();
-<<<<<<< HEAD
     showToast(`${selectedBuilding.name} construído! Você ganhou ${formatBRL(rewardCents)} e sua cidade está crescendo.`);
-=======
-    showToast(`${selectedBuilding.name} construído! Sua cidade está crescendo.`);
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
     render();
   }, 850);
 }
@@ -1228,11 +1178,7 @@ async function activateUser(user) {
 function announceClockCatchUp(clock) {
   const processedDays = Number.isSafeInteger(clock.processed_days) ? clock.processed_days : 0;
   const events = Array.isArray(clock.events) ? clock.events : [];
-<<<<<<< HEAD
   if (events.some((event) => event.type === "disaster" || event.type === "utility_outage")) playAlertSound("disaster");
-=======
-  if (events.some((event) => event.type === "disaster")) playAlertSound("disaster");
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
   if (processedDays > 0) {
     const summary = events.map((event) => event.message).join(" ");
     showToast(`Calendário atualizado: ${processedDays} dia(s) processado(s). ${summary}`);
@@ -1388,10 +1334,7 @@ document.addEventListener("keydown", (event) => {
   closeFinanceQuestion();
   closeAuthModal();
   closeInstallModal();
-<<<<<<< HEAD
   closeSimulationSettings();
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 });
 document.querySelectorAll(".nav-link").forEach((link) => {
   link.addEventListener("click", () => {
@@ -1407,15 +1350,12 @@ byId("install-button").addEventListener("click", showInstallOptions);
 byId("close-install").addEventListener("click", closeInstallModal);
 byId("confirm-install").addEventListener("click", closeInstallModal);
 byId("install-modal").addEventListener("click", (event) => { if (event.target === byId("install-modal")) closeInstallModal(); });
-<<<<<<< HEAD
 byId("simulation-settings").addEventListener("click", openSimulationSettings);
 byId("close-simulation-settings").addEventListener("click", closeSimulationSettings);
 byId("simulation-settings-form").addEventListener("submit", saveSimulationSettings);
 byId("simulation-settings-modal").addEventListener("click", (event) => {
   if (event.target === byId("simulation-settings-modal")) closeSimulationSettings();
 });
-=======
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   installPrompt = event;

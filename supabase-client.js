@@ -73,19 +73,20 @@
       if (!supabase) throw new Error("Supabase não está configurado.");
       const { data, error } = await supabase.rpc("sync_city_clock");
       if (error) throw error;
-<<<<<<< HEAD
       const { data: simulation, error: simulationError } = await supabase.rpc("process_city_simulation", {
         p_processed_days: data.processed_days
       });
-      if (simulationError) throw simulationError;
+      // The city clock and authentication remain usable while a project is
+      // waiting for the optional utilities migration to be applied.
+      if (simulationError) {
+        console.error("A migração de simulação da cidade ainda não está disponível no Supabase.", simulationError);
+        return { ...data, events: Array.isArray(data.events) ? data.events : [], simulationUnavailable: true };
+      }
       return {
         ...data,
         game_state: simulation.game_state,
         events: [...(Array.isArray(data.events) ? data.events : []), ...(Array.isArray(simulation.events) ? simulation.events : [])]
       };
-=======
-      return data;
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
     }
   };
 })();

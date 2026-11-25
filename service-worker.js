@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-const CACHE_NAME = "cidade-em-construcao-v9";
-=======
-const CACHE_NAME = "cidade-em-construcao-v8";
->>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
+const CACHE_NAME = "cidade-em-construcao-v10";
 const APP_SHELL = [
   "./",
   "./index.html",
