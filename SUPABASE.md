@@ -9,11 +9,18 @@ O jogo usa Supabase Auth com e-mail e senha e salva uma cidade por conta. O prog
    - [`supabase/migrations/20261124210000_create_cities.sql`](./supabase/migrations/20261124210000_create_cities.sql)
    - [`supabase/migrations/20261124213000_create_study_game.sql`](./supabase/migrations/20261124213000_create_study_game.sql)
 3. Execute também [`supabase/migrations/20261124230000_add_realtime_city_clock.sql`](./supabase/migrations/20261124230000_add_realtime_city_clock.sql), depois das duas migrações acima.
+<<<<<<< HEAD
 4. Execute [`supabase/migrations/20261125151000_add_city_simulation.sql`](./supabase/migrations/20261125151000_add_city_simulation.sql) para ativar o consumo e as contas mensais.
 5. Em **Project Settings → API**, copie a Project URL e a chave pública **Publishable key** (ou a chave legada `anon`).
 6. Preencha `url` e `anonKey` em [`supabase-config.js`](./supabase-config.js). Essas credenciais públicas podem estar no navegador; nunca use a `service_role` ou outra chave secreta no frontend.
 7. Sirva a pasta por HTTP local, por exemplo com `python -m http.server 8000`, e abra `http://localhost:8000`. Não abra o arquivo com `file://`.
 8. Clique no avatar e crie uma conta ou entre. Se a confirmação de e-mail estiver habilitada no Supabase, confirme o endereço antes de entrar.
+=======
+4. Em **Project Settings → API**, copie a Project URL e a chave pública **Publishable key** (ou a chave legada `anon`).
+5. Preencha `url` e `anonKey` em [`supabase-config.js`](./supabase-config.js). Essas credenciais públicas podem estar no navegador; nunca use a `service_role` ou outra chave secreta no frontend.
+6. Sirva a pasta por HTTP local, por exemplo com `python -m http.server 8000`, e abra `http://localhost:8000`. Não abra o arquivo com `file://`.
+7. Clique no avatar e crie uma conta ou entre. Se a confirmação de e-mail estiver habilitada no Supabase, confirme o endereço antes de entrar.
+>>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 
 ## Dados e segurança
 
@@ -25,8 +32,11 @@ O jogo usa Supabase Auth com e-mail e senha e salva uma cidade por conta. O prog
 - O jogo salva alterações automaticamente após mudanças. Uma falha de sincronização é exibida no jogo e também no console do navegador.
 - É necessário entrar para jogar. Sem autenticação, o progresso local continua visível neste navegador, mas não é possível construir, estudar ou alterar a cidade. Ao conectar uma conta sem cidade salva, o progresso de visitante deste navegador é enviado para essa conta; se a conta já tiver uma cidade, ela é carregada e o progresso local permanece no navegador.
 - A coluna `cities.last_processed_date` e a RPC `sync_city_clock()` usam `America/Sao_Paulo` e a data do servidor. O app consulta o relógio ao entrar, ao voltar à aba e periodicamente. Ao reconectar, a função processa transacionalmente cada data que passou: repasse diário, materiais, folhas semanais, desastres e parcelas de empréstimo. Repetir a chamada não duplica dias já processados.
+<<<<<<< HEAD
 - A RPC `process_city_simulation()` aplica o consumo diário de água e energia, as contas de serviços e o imposto municipal no mesmo calendário oficial. As contas vencem no dia 1; falta de saldo deixa a cobrança pendente, corta o serviço correspondente e reduz a felicidade enquanto houver interrupção. O consumo e as cobranças atrasadas são recuperados após períodos sem acesso.
 - As configurações da simulação ficam salvas no estado da cidade. O botão **Configurar** permite alterar a recompensa por resposta correta e os valores mensais de água, energia e imposto.
+=======
+>>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 - A receita e a folha vencem na mudança da data civil em Brasília; parcelas de empréstimo vencem no primeiro dia de cada mês civil. O catch-up ocorre assim que a cidade volta a sincronizar; não requer Supabase Cron.
 - O estado JSON usa `state_version = 1`, permitindo migrar o formato quando o jogo evoluir.
 - A migração educacional cria matérias, desafios, alternativas, tentativas e conclusões. O gabarito fica em uma tabela sem acesso direto dos jogadores.

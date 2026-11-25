@@ -4,15 +4,21 @@
 
 - Todos os valores do jogo são em reais (R$), armazenados como centavos inteiros.
 - O saldo é nominal: não sofre ajuste automático pelo IPCA. Ele só muda por receitas, despesas e recompensas explicitamente exibidas no jogo. As três missões iniciais pagam uma vez cada; depois de concluídas, não voltam a conceder recompensas.
+<<<<<<< HEAD
 - Cada resposta correta rende R$ 100,00 por padrão, inclusive nos desafios de construção, expansão e estudo. O valor pode ser ajustado nas configurações da simulação, de R$ 0,00 a R$ 1.000.000,00 por acerto.
 - Água e energia têm uma reserva que diminui diariamente conforme a população. As contas de água (R$ 120,00), energia (R$ 180,00) e imposto municipal (R$ 75,00) vencem no primeiro dia de cada mês; os valores podem ser alterados nas configurações da cidade. Se o orçamento não cobrir uma conta, o serviço é interrompido ou o imposto fica pendente. Um serviço cortado pode ser restabelecido no próximo vencimento se a respectiva conta for paga. A felicidade diminui durante interrupções.
+=======
+>>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 - A prefeitura começa com 3 funcionários, cada um recebe R$ 500,00 a cada 7 dias civis. A folha semanal total é de R$ 1.500,00 e é debitada automaticamente do orçamento.
 - O saldo pode ficar negativo após o pagamento da folha; construções continuam bloqueadas enquanto o orçamento não cobrir seus custos.
 - Cada resposta errada custa R$ 300,00 e é registrada no histórico da conta municipal quando ela está aberta. Cinco erros consecutivos oferecem a contratação opcional de uma professora por R$ 800,00 por semana; a professora pode dar uma dica por desafio.
 - A cada 7 a 14 datas civis, um desastre leve aleatório pode exigir de R$ 200,00 a R$ 800,00 em reparos. O próximo alerta aparece no painel, o ocorrido é anunciado e registrado no histórico se a conta estiver aberta.
 - O jogo toca alertas diferentes para acertos, erros e desastres. A preferência de áudio pode ser desligada e é guardada neste dispositivo; o áudio começa após uma interação do jogador, conforme as regras dos navegadores móveis.
 - O calendário real é controlado pelo servidor Supabase no fuso `America/Sao_Paulo`; não existe botão para avançar o dia. A receita diária é creditada na mudança de data em Brasília, e a folha vence a cada 7 datas civis. O servidor recupera todos os dias vencidos quando a cidade volta a sincronizar.
+<<<<<<< HEAD
 - O consumo, os vencimentos, os cortes de serviço e os efeitos na felicidade também são processados por data civil no servidor, inclusive ao recuperar dias sem acesso. A configuração requer a migração de simulação descrita em [SUPABASE.md](./SUPABASE.md).
+=======
+>>>>>>> 46cdbbb6cba9dde98b3ab8c77259076d76e24196
 - A contagem para o próximo pagamento e o número de folhas pagas são persistidos por cidade para evitar reiniciar o calendário ao recarregar ou sincronizar.
 - A conta municipal é gratuita e usa o mesmo saldo do orçamento apresentado no painel da cidade.
 - A cidade pode ter apenas um empréstimo ativo por vez, nos valores de R$ 1.000,00, R$ 5.000,00 ou R$ 10.000,00.
