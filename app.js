@@ -34,7 +34,7 @@ const initialState = {
   },
   education: { consecutiveMistakes: 0 },
   disasters: { daysUntilEvent: 7 + Math.floor(Math.random() * 8), eventsTriggered: 0 },
-  study: { challengeCursor: 0, financeCursor: 0, seed: createStudySeed() }
+  study: { challengeCursor: 0, financeCursor: 0, adminCursor: 0, seed: createStudySeed() }
 };
 const saveKey = "cidade-em-construcao-v1";
 const buildingById = new Map(buildings.map((building) => [building.id, building]));
@@ -119,6 +119,7 @@ function normalizeState(candidate) {
   const financeCursorValue = study.financeCursor ?? study.questionCursor;
   const financeCursor = Number.isSafeInteger(financeCursorValue) && financeCursorValue >= 0
     ? financeCursorValue : 0;
+  const adminCursor = Number.isSafeInteger(study.adminCursor) && study.adminCursor >= 0 ? study.adminCursor : 0;
   const seed = Number.isInteger(study.seed) && study.seed >= 0
     ? study.seed >>> 0 : initialState.study.seed;
   const savedPayroll = candidate.payroll && typeof candidate.payroll === "object" ? candidate.payroll : {};
@@ -195,7 +196,7 @@ function normalizeState(candidate) {
     simulation,
     education,
     disasters,
-    study: { challengeCursor, financeCursor, seed }
+    study: { challengeCursor, financeCursor, adminCursor, seed }
   };
 }
 function loadGuestState() {
@@ -359,7 +360,8 @@ function renderBuildings() {
     const card = document.createElement("article");
     card.className = "build-card";
     const canAfford = state.money >= building.cost && state.materials >= building.material;
-    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} mat.</span><button class="build-action" ${canAfford && cloudReady ? "" : "disabled"}>Construir</button></div>`;
+    const actionLabel = canAfford ? "Construir" : "Faltam recursos";
+    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} mat.</span><button class="build-action" ${canAfford ? "" : "disabled"}>${actionLabel}</button></div>`;
     card.querySelector("button").addEventListener("click", () => startQuiz(building));
     list.append(card);
   });
@@ -420,7 +422,7 @@ function renderBank() {
 }
 
 function updateLibraryCounter() {
-  const remaining = Math.max(0, window.studyQuestionBank.poolSize - state.study.challengeCursor);
+  const remaining = Math.max(0, window.pernambucoQuestionBank.poolSize - state.study.adminCursor);
   byId("library-counter").textContent = `${formatNumber(remaining)} restantes`;
 }
 
@@ -707,10 +709,14 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
   if (!requireLiveCity()) return;
   try {
     const isLoan = purpose === "loan";
+    const isAdminPractice = purpose === "practice-admin";
     const question = isLoan
       ? window.financeQuestionBank.nextQuestion(state.study.financeCursor, state.study.seed, preferredMethod)
-      : window.studyQuestionBank.nextQuestion(state.study.challengeCursor, state.study.seed);
+      : isAdminPractice
+        ? window.pernambucoQuestionBank.nextQuestion(state.study.adminCursor)
+        : window.studyQuestionBank.nextQuestion(state.study.challengeCursor, state.study.seed);
     if (isLoan) state.study.financeCursor = question.nextCursor;
+    else if (isAdminPractice) state.study.adminCursor = question.nextCursor;
     else {
       state.study.challengeCursor = question.nextCursor;
       updateLibraryCounter();
@@ -724,7 +730,8 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
     byId("finance-subject").textContent = question.subject;
     byId("finance-sequence").textContent = isLoan
       ? `JUROS · DESAFIO ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`
-      : `ASSUNTOS VARIADOS · ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`;
+      : isAdminPractice ? `CPU/PE · ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`
+        : `ASSUNTOS VARIADOS · ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`;
     byId("finance-title").textContent = isLoan ? "Desafio para liberar crédito" : "Desafio de estudos";
     byId("finance-icon").textContent = isLoan
       ? (question.method === "simple" ? "🧮" : "📈")
@@ -1319,7 +1326,7 @@ byId("loan-form").addEventListener("submit", requestLoan);
 ["loan-amount", "loan-method", "loan-term"].forEach((id) => {
   byId(id).addEventListener("change", updateLoanPreview);
 });
-byId("practice-interest").addEventListener("click", () => showFinanceQuestion("practice", null));
+byId("practice-interest").addEventListener("click", () => showFinanceQuestion("practice-admin", null));
 byId("close-finance").addEventListener("click", closeFinanceQuestion);
 byId("finance-submit").addEventListener("click", submitFinanceAnswer);
 byId("finance-hire-teacher").addEventListener("click", () => hireTeacher("finance"));
