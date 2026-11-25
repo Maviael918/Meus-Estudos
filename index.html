@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f5f7f2">
+    <meta name="description" content="Aprenda, planeje e construa uma cidade melhor em Cidade em Construção.">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Cidade em Construção">
+    <title>Cidade em Construção</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="Cidade em Construção, início">
+          <span class="brand-icon">🏙️</span>
+          <span><strong>cidade em</strong><br><b>construção</b></span>
+        </a>
+        <div class="side-label">PREFEITURA</div>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a class="nav-link active" href="#cidade"><span>▦</span> Minha cidade</a>
+          <a class="nav-link" href="#construir"><span>⌂</span> Construir</a>
+          <a class="nav-link" href="#banco"><span>🏦</span> Banco Central</a>
+          <a class="nav-link" href="#relatorio"><span>▤</span> Relatórios</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="mayor-card">
+            <div class="mayor-avatar">👩🏽‍💼</div>
+            <div><strong>Prefeito(a)</strong><small>Mandato • Ano 1</small></div>
+            <span class="online-dot"></span>
+          </div>
+          <p>Uma cidade melhor começa com boas ideias.</p>
+        </div>
+      </aside>
+
+      <main class="main-content" id="cidade">
+        <header class="topbar">
+          <div class="breadcrumb">Painel da prefeitura <span>/</span> <strong>Minha cidade</strong></div>
+          <div class="top-actions">
+            <span class="season"><span class="sun">◷</span> <span id="clock-status">Faça login para jogar</span></span>
+            <button class="icon-button" id="sound-toggle" aria-label="Ativar ou desativar sons" title="Som">♫</button>
+            <button class="install-button" id="install-button" type="button" aria-label="Instalar jogo no dispositivo"><span aria-hidden="true">↓</span><span class="install-label" id="install-label">Instalar</span></button>
+            <button class="account-button" id="account-button" aria-label="Entrar ou sair da conta">👩🏽‍💼 <span id="account-label">Entrar</span></button>
+          </div>
+        </header>
+
+        <section class="welcome-row">
+          <div>
+            <p class="eyebrow" id="server-date">Entre na sua conta para iniciar</p>
+            <h1>Bom dia, prefeito(a)! <span>👋</span></h1>
+            <p class="welcome-copy">Sua cidade está cheia de possibilidades. Qual será o próximo passo?</p>
+          </div>
+          <div class="server-clock">
+            <span id="server-time">Relógio oficial do Supabase · Brasília</span>
+            <button class="primary-button" id="clock-login-button" type="button">Entrar para jogar</button>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Recursos da cidade">
+          <article class="stat-card">
+            <div class="stat-icon coin">R$</div><div class="stat-info"><span>ORÇAMENTO</span><strong id="money-value">R$ 2.500,00</strong><em>+R$ 120,00 por dia</em></div><span class="stat-more">•••</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon people">♟</div><div class="stat-info"><span>POPULAÇÃO</span><strong id="population-value">24</strong><em>+4 este mês</em></div><span class="stat-more">•••</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon materials">▧</div><div class="stat-info"><span>MATERIAIS</span><strong id="materials-value">120</strong><em>Estoque disponível</em></div><span class="stat-more">•••</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-icon happiness">♡</div><div class="stat-info"><span>FELICIDADE</span><strong id="happiness-value">72<small>%</small></strong><em>↑ Muito bem!</em></div><span class="stat-more">•••</span>
+          </article>
+        </section>
+
+        <section class="payroll-card panel" aria-label="Folha semanal da prefeitura">
+          <div class="payroll-heading">
+            <div><p class="eyebrow">EQUIPE MUNICIPAL</p><h2>Funcionários da prefeitura</h2></div>
+            <span class="payroll-badge">PAGAMENTO SEMANAL</span>
+          </div>
+          <div class="payroll-grid">
+            <div><span>Funcionários</span><strong id="payroll-employee-count">3</strong></div>
+            <div><span>Salário por pessoa</span><strong id="payroll-weekly-wage">R$ 500,00</strong></div>
+            <div><span>Professores contratados</span><strong id="payroll-teacher-count">0</strong></div>
+            <div><span>Total da folha</span><strong id="payroll-weekly-total">R$ 1.500,00</strong></div>
+            <div><span>Próximo pagamento</span><strong id="payroll-next-payment">Em 7 dias</strong></div>
+            <div><span>Alerta de desastre</span><strong id="next-disaster-counter">Possível em 7 dias</strong></div>
+          </div>
+          <p class="payroll-note">O calendário usa a data do servidor no horário de Brasília; receitas, salários, desastres e parcelas vencem automaticamente, inclusive após períodos sem acesso. Respostas erradas custam R$ 300,00; após 5 erros seguidos, a prefeitura pode contratar uma professora por R$ 800,00 semanais.</p>
+        </section>
+
+        <section class="simulation-card panel" aria-label="Água, energia e impostos da cidade">
+          <div class="payroll-heading">
+            <div><p class="eyebrow">VIDA NA CIDADE</p><h2>Serviços e contas mensais</h2></div>
+            <div class="simulation-actions"><span class="payroll-badge" id="simulation-next-bills">VENCIMENTO TODO DIA 1</span><button class="subtle-button settings-button" id="simulation-settings" type="button">⚙️ <span>Configurar</span></button></div>
+          </div>
+          <div class="simulation-grid">
+            <div class="utility-card">
+              <span>💧 Água</span><strong id="water-status">Ativa</strong>
+              <div class="utility-meter"><i id="water-meter"></i></div>
+              <small id="water-level">100% de reserva</small>
+              <small>Conta mensal: <b id="water-bill"></b></small>
+            </div>
+            <div class="utility-card">
+              <span>⚡ Energia</span><strong id="energy-status">Ativa</strong>
+              <div class="utility-meter"><i id="energy-meter"></i></div>
+              <small id="energy-level">100% de reserva</small>
+              <small>Conta mensal: <b id="energy-bill"></b></small>
+            </div>
+            <div class="utility-card tax-card">
+              <span>🏛️ Imposto municipal</span><strong id="tax-status">Próximo vencimento: dia 1</strong>
+              <small id="tax-bill">R$ 75,00 por mês</small>
+              <small id="simulation-outage-note">O consumo diário depende da população.</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="city-panel panel">
+            <div class="section-heading">
+              <div><p class="eyebrow">SEU PEQUENO COMEÇO</p><h2>Vila das Flores <span class="weather">☀️ 24°</span></h2></div>
+              <button class="subtle-button" id="map-toggle">▦ <span>Visão geral</span></button>
+            </div>
+            <div class="city-status"><span><i class="status-dot"></i> Cidade funcionando bem</span><span id="city-level">Nível 1 <b>•</b> Vila</span></div>
+            <div class="city-map-wrap">
+              <div class="map-label label-north">↑ NORTE</div>
+              <div class="city-map" id="city-map" aria-label="Mapa da cidade"></div>
+              <div class="map-label label-south">▼ RIO DAS FLORES</div>
+            </div>
+            <div class="map-legend"><span><i class="legend-dot built"></i> Construído</span><span><i class="legend-dot available"></i> Terreno disponível</span><span><i class="legend-dot locked"></i> Área bloqueada</span><span class="map-hint">Clique em um terreno para construir</span></div>
+          </div>
+
+          <aside class="right-column">
+            <section class="mission-card">
+              <div class="mission-top"><span class="mission-icon">✦</span><span class="eyebrow">MISSÃO ATUAL</span><span class="mission-count" id="mission-count">1 de 3</span></div>
+              <h3 id="mission-title">Um lar para todos</h3>
+              <p id="mission-description">Construa 2 casas para receber novas famílias na cidade.</p>
+              <div class="progress-label"><span>Progresso</span><strong id="mission-progress-text">0 / 2</strong></div>
+              <div class="progress-track"><span id="mission-progress"></span></div>
+              <div class="reward"><span>🎁</span> <span id="mission-reward-label">Recompensa:</span> <strong id="mission-reward">+R$ 300,00</strong></div>
+            </section>
+            <section class="advisor-card">
+              <div class="advisor-heading"><span class="advisor-avatar">🧑🏽‍🏫</span><div><strong>Dica da professora Ana</strong><small>Sua conselheira educacional</small></div><span class="sparkle">✦</span></div>
+              <p id="advisor-tip">Uma casa nova pode abrigar até 8 moradores. Planeje bem para sua cidade crescer!</p>
+              <button class="text-button" id="learn-more">Ver dica de hoje <span>→</span></button>
+            </section>
+            <section class="quick-report panel" id="relatorio">
+              <div class="quick-title"><h3>Visão da cidade</h3><span class="report-period">ESTE MÊS</span></div>
+              <div class="report-row"><span>🏠 Moradias</span><strong id="homes-count">0</strong></div>
+              <div class="report-row"><span>🏪 Serviços</span><strong id="services-count">0</strong></div>
+              <div class="report-row"><span>🎓 Conhecimento</span><strong id="knowledge-count">0 pts</strong></div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="bank-section" id="banco">
+          <div class="section-heading bank-section-heading">
+            <div><p class="eyebrow">FINANÇAS DA CIDADE</p><h2>Banco Central da Cidade <span aria-hidden="true">🏦</span></h2></div>
+            <span class="bank-educational-badge">SIMULAÇÃO EDUCATIVA</span>
+          </div>
+          <p class="bank-intro">Abra a conta da prefeitura, organize o orçamento e estude juros antes de financiar novos projetos.</p>
+          <div class="bank-layout">
+            <section class="bank-main-card panel">
+              <div class="bank-account-closed" id="bank-account-closed">
+                <span class="bank-card-icon">🏛️</span>
+                <div><h3>Abra a conta da sua cidade</h3><p>Sem tarifas. Seu saldo é o orçamento municipal do jogo.</p></div>
+                <button class="primary-button" id="open-bank-account" type="button">Abrir conta</button>
+              </div>
+              <div class="bank-account-open hidden" id="bank-account-open">
+                <div class="bank-balance-card">
+                  <div><span class="bank-account-label">CONTA DA PREFEITURA</span><strong id="bank-account-number">0000-0000</strong></div>
+                  <span class="bank-balance-label">Saldo disponível<strong id="bank-balance">R$ 0,00</strong></span>
+                </div>
+                <div class="loan-summary" id="loan-summary"></div>
+                <form id="loan-form" class="loan-form">
+                  <div class="loan-form-heading"><h3>Solicitar empréstimo</h3><span>Um empréstimo ativo por cidade</span></div>
+                  <label for="loan-amount">Valor do empréstimo</label>
+                  <select id="loan-amount" name="amount">
+                    <option value="100000">R$ 1.000,00</option>
+                    <option value="500000">R$ 5.000,00</option>
+                    <option value="1000000">R$ 10.000,00</option>
+                  </select>
+                  <label for="loan-method">Tipo de juros</label>
+                  <select id="loan-method" name="method">
+                    <option value="simple">Juros simples — 2% ao mês</option>
+                    <option value="compound">Juros compostos — 1,5% ao mês</option>
+                  </select>
+                  <label for="loan-term">Prazo para pagar</label>
+                  <select id="loan-term" name="term">
+                    <option value="6">6 parcelas mensais</option>
+                    <option value="12">12 parcelas mensais</option>
+                  </select>
+                  <div class="loan-preview" id="loan-preview"></div>
+                  <button class="primary-button loan-submit" id="request-loan" type="submit">Estudar e solicitar empréstimo</button>
+                  <p class="bank-disclaimer">Crédito virtual do jogo. Parcelas debitadas no primeiro dia de cada mês civil; sem multas nesta simulação.</p>
+                </form>
+              </div>
+            </section>
+
+            <aside class="bank-side-column">
+              <section class="bank-training-card">
+                <div class="training-icon">📚</div>
+                <p class="eyebrow">BIBLIOTECA DE ESTUDOS</p>
+                <h3>Aprenda novos assuntos</h3>
+                <p>Desafios de Matemática, Português, Ciências, Geografia, História, Meio Ambiente e Cidadania, sem repetir questão antes de concluir a biblioteca.</p>
+                <div class="library-counter"><span>Desafios variados</span><strong id="library-counter">56</strong></div>
+                <button class="text-button training-button" id="practice-interest" type="button">Praticar assuntos variados <span>→</span></button>
+                <p class="bank-feedback" id="bank-feedback" aria-live="polite"></p>
+              </section>
+              <section class="bank-transactions panel">
+                <div class="quick-title"><h3>Movimentações recentes</h3><span class="report-period">CONTA</span></div>
+                <p class="bank-empty-transactions" id="bank-empty-transactions">Abra sua conta para registrar as movimentações.</p>
+                <ul class="transaction-list" id="transaction-list"></ul>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section class="build-section" id="construir">
+          <div class="section-heading build-heading">
+            <div><p class="eyebrow">DÊ O PRÓXIMO PASSO</p><h2>O que vamos construir?</h2></div>
+            <button class="text-button" id="show-all">Ver todas as construções <span>→</span></button>
+          </div>
+          <div class="build-list" id="build-list"></div>
+        </section>
+        <footer class="footer-note"><span>🌱</span> Cada desafio aprendido é uma nova oportunidade para sua cidade.</footer>
+      </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="quiz-modal" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
+      <div class="quiz-card">
+        <button class="modal-close" id="close-quiz" aria-label="Fechar desafio">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject" id="quiz-subject">MATEMÁTICA</span><span>DESAFIO DA PREFEITURA</span></div>
+        <div class="quiz-building-icon" id="quiz-building-icon">🏠</div>
+        <h2 id="quiz-title">Vamos construir!</h2>
+        <p class="quiz-intro" id="quiz-intro">Resolva o desafio para liberar esta construção.</p>
+        <div class="question-box"><p id="quiz-question"></p><div id="quiz-options" class="quiz-options"></div></div>
+        <p class="quiz-feedback" id="quiz-feedback" aria-live="polite"></p>
+        <button class="text-button teacher-hint-button hidden" id="quiz-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
+        <p class="teacher-hint hidden" id="quiz-teacher-hint" aria-live="polite"></p>
+        <section class="teacher-offer hidden" id="quiz-teacher-offer">
+          <strong>📚 Vamos reforçar a equipe?</strong>
+          <p>Você errou 5 respostas seguidas. Contratar uma professora custa R$ 800,00 por semana e ela poderá dar uma dica em cada desafio.</p>
+          <div><button class="primary-button teacher-hire" id="quiz-hire-teacher" type="button">Contratar professora</button><button class="text-button teacher-decline" id="quiz-decline-teacher" type="button">Agora não</button></div>
+        </section>
+        <button class="primary-button quiz-submit" id="quiz-submit" disabled>Confirmar resposta <span>→</span></button>
+      </div>
+    </div>
+    <div class="modal-backdrop hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" aria-hidden="true">
+      <form class="quiz-card auth-card" id="auth-form">
+        <button class="modal-close" id="close-auth" type="button" aria-label="Fechar acesso">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject">PREFEITURA</span><span>CONTA DO JOGADOR</span></div>
+        <div class="quiz-building-icon">🏙️</div>
+        <h2 id="auth-title">Entre para iniciar o calendário</h2>
+        <p class="quiz-intro">O calendário oficial de Brasília e o progresso da cidade são sincronizados pelo Supabase.</p>
+        <label class="auth-label" for="auth-email">E-mail</label>
+        <input class="auth-input" id="auth-email" type="email" autocomplete="email" required>
+        <label class="auth-label" for="auth-password">Senha</label>
+        <input class="auth-input" id="auth-password" type="password" minlength="6" autocomplete="current-password" required>
+        <p class="auth-feedback" id="auth-feedback" aria-live="polite"></p>
+        <button class="primary-button quiz-submit" id="auth-submit" type="submit">Entrar</button>
+        <button class="text-button auth-mode-toggle" id="auth-mode-toggle" type="button">Ainda não tem conta? Criar conta</button>
+      </form>
+    </div>
+    <div class="modal-backdrop hidden" id="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title" aria-hidden="true">
+      <section class="quiz-card install-card">
+        <button class="modal-close" id="close-install" type="button" aria-label="Fechar instruções">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject">JOGUE EM QUALQUER LUGAR</span><span>SEM BAIXAR DA APP STORE</span></div>
+        <div class="quiz-building-icon">📲</div>
+        <h2 id="install-title">Adicione à sua tela inicial</h2>
+        <p class="quiz-intro" id="install-instructions"></p>
+        <button class="primary-button quiz-submit" id="confirm-install" type="button">Entendi</button>
+      </section>
+    </div>
+    <div class="modal-backdrop hidden" id="simulation-settings-modal" role="dialog" aria-modal="true" aria-labelledby="simulation-settings-title" aria-hidden="true">
+      <form class="quiz-card auth-card settings-card" id="simulation-settings-form">
+        <button class="modal-close" id="close-simulation-settings" type="button" aria-label="Fechar configurações">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject">PREFEITURA</span><span>ECONOMIA DA CIDADE</span></div>
+        <div class="quiz-building-icon">⚙️</div>
+        <h2 id="simulation-settings-title">Configurações da simulação</h2>
+        <p class="quiz-intro">Ajuste a recompensa, as contas e o consumo diário. Valores das contas em reais; as mudanças valem na próxima simulação.</p>
+        <label class="auth-label" for="question-reward-setting">Recompensa por resposta correta</label>
+        <input class="auth-input" id="question-reward-setting" type="number" min="0" max="1000000" step="1" required>
+        <label class="auth-label" for="water-bill-setting">Conta mensal de água</label>
+        <input class="auth-input" id="water-bill-setting" type="number" min="0" max="1000000" step="1" required>
+        <label class="auth-label" for="energy-bill-setting">Conta mensal de energia</label>
+        <input class="auth-input" id="energy-bill-setting" type="number" min="0" max="1000000" step="1" required>
+        <label class="auth-label" for="property-tax-setting">Imposto municipal mensal</label>
+        <input class="auth-input" id="property-tax-setting" type="number" min="0" max="1000000" step="1" required>
+        <label class="auth-label" for="water-consumption-setting">Consumo diário de água (moradores por ponto de reserva)</label>
+        <input class="auth-input" id="water-consumption-setting" type="number" min="1" max="1000" step="1" required>
+        <label class="auth-label" for="energy-consumption-setting">Consumo diário de energia (moradores por ponto de reserva)</label>
+        <input class="auth-input" id="energy-consumption-setting" type="number" min="1" max="1000" step="1" required>
+        <p class="auth-feedback" id="simulation-settings-feedback" aria-live="polite"></p>
+        <button class="primary-button quiz-submit" id="save-simulation-settings" type="submit">Salvar configurações</button>
+      </form>
+    </div>
+    <div class="modal-backdrop hidden" id="finance-modal" role="dialog" aria-modal="true" aria-labelledby="finance-title" aria-hidden="true">
+      <div class="quiz-card">
+        <button class="modal-close" id="close-finance" type="button" aria-label="Fechar desafio">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject" id="finance-subject">MATEMÁTICA FINANCEIRA</span><span id="finance-sequence">DESAFIO EXCLUSIVO</span></div>
+        <div class="quiz-building-icon" id="finance-icon">🧮</div>
+        <h2 id="finance-title">Desafio do Banco Central</h2>
+        <p class="quiz-intro" id="finance-intro">Resolva o cálculo para avançar.</p>
+        <div class="question-box"><p id="finance-question"></p><div id="finance-options" class="quiz-options"></div></div>
+        <p class="quiz-feedback" id="finance-feedback" aria-live="polite"></p>
+        <button class="text-button teacher-hint-button hidden" id="finance-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
+        <p class="teacher-hint hidden" id="finance-teacher-hint" aria-live="polite"></p>
+        <section class="teacher-offer hidden" id="finance-teacher-offer">
+          <strong>📚 Vamos reforçar a equipe?</strong>
+          <p>Você errou 5 respostas seguidas. Contratar uma professora custa R$ 800,00 por semana e ela poderá dar uma dica em cada desafio.</p>
+          <div><button class="primary-button teacher-hire" id="finance-hire-teacher" type="button">Contratar professora</button><button class="text-button teacher-decline" id="finance-decline-teacher" type="button">Agora não</button></div>
+        </section>
+        <button class="primary-button quiz-submit" id="finance-submit" type="button" disabled>Confirmar resposta <span>→</span></button>
+      </div>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="finance-question-bank.js"></script>
+    <script src="study-question-bank.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
