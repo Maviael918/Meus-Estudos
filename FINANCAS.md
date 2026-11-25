@@ -3,6 +3,7 @@
 ## Regras da simulação
 
 - Todos os valores do jogo são em reais (R$), armazenados como centavos inteiros.
+- O saldo é nominal: não sofre ajuste automático pelo IPCA. Ele só muda por receitas, despesas e recompensas explicitamente exibidas no jogo. As três missões iniciais pagam uma vez cada; depois de concluídas, não voltam a conceder recompensas.
 - A prefeitura começa com 3 funcionários, cada um recebe R$ 500,00 a cada 7 dias civis. A folha semanal total é de R$ 1.500,00 e é debitada automaticamente do orçamento.
 - O saldo pode ficar negativo após o pagamento da folha; construções continuam bloqueadas enquanto o orçamento não cobrir seus custos.
 - Cada resposta errada custa R$ 300,00 e é registrada no histórico da conta municipal quando ela está aberta. Cinco erros consecutivos oferecem a contratação opcional de uma professora por R$ 800,00 por semana; a professora pode dar uma dica por desafio.

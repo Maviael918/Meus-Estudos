@@ -70,6 +70,8 @@ $$;
 revoke all on function public.append_city_transaction(jsonb, text, bigint, date)
   from public, anon, authenticated;
 
+drop function if exists public.save_city_state(text, jsonb, bigint, bigint, text);
+
 create or replace function public.save_city_state(
   p_name text,
   p_game_state jsonb,
@@ -554,3 +556,5 @@ $$;
 
 revoke all on function public.sync_city_clock() from public, anon;
 grant execute on function public.sync_city_clock() to authenticated;
+
+notify pgrst, 'reload schema';

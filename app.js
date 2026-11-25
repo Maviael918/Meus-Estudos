@@ -145,7 +145,12 @@ function normalizeState(candidate) {
   };
   return {
     ...initialState,
-    ...Object.fromEntries(numericFields.map((field) => [field, field === "money" ? normalizedMoney : candidate[field]])),
+    ...Object.fromEntries(numericFields.map((field) => [
+      field,
+      field === "money" ? normalizedMoney
+        : field === "completedMissions" ? Math.min(candidate[field], 3)
+          : candidate[field]
+    ])),
     economyVersion: 2,
     expanded: candidate.expanded,
     built,
@@ -409,18 +414,28 @@ function render() {
   byId("services-count").textContent = state.built.filter((item) => item.effect === "services").length;
   byId("knowledge-count").textContent = `${state.knowledge} pts`;
   const homes = state.built.filter((item) => item.effect === "homes").length;
-  const mission = state.completedMissions % 3;
-  const progress = mission === 0 ? Math.min(homes, 2) : mission === 1 ? Math.min(state.built.filter((item) => item.effect === "services").length, 1) : Math.min(state.knowledge, 10);
   const targets = [{ title: "Um lar para todos", description: "Construa 2 casas para receber novas famílias na cidade.", target: 2, reward: "+R$ 300,00" },
     { title: "Comércio de bairro", description: "Construa um mercadinho para atender os moradores.", target: 1, reward: "+R$ 250,00" },
     { title: "Aprender para crescer", description: "Construa uma escola e leve conhecimento à cidade.", target: 10, reward: "+R$ 400,00" }];
-  const goal = targets[mission];
-  byId("mission-count").textContent = `${mission + 1} de 3`;
+  const mission = Math.min(state.completedMissions, targets.length);
+  const goal = targets[mission] || {
+    title: "Missões iniciais concluídas",
+    description: "Parabéns! Continue desenvolvendo sua cidade e explorando novos desafios.",
+    target: targets.length,
+    reward: "Concluídas"
+  };
+  const progress = mission >= targets.length ? targets.length
+    : mission === 0 ? Math.min(homes, goal.target)
+      : mission === 1 ? Math.min(state.built.filter((item) => item.effect === "services").length, goal.target)
+        : Math.min(state.knowledge, goal.target);
+  byId("mission-count").textContent = `${Math.min(mission + 1, targets.length)} de ${targets.length}`;
   byId("mission-title").textContent = goal.title;
   byId("mission-description").textContent = goal.description;
   byId("mission-progress-text").textContent = `${progress} / ${goal.target}`;
   byId("mission-progress").style.width = `${Math.min(100, progress / goal.target * 100)}%`;
-  if (progress >= goal.target) {
+  byId("mission-reward-label").textContent = mission >= targets.length ? "Status:" : "Recompensa:";
+  byId("mission-reward").textContent = goal.reward;
+  if (mission < targets.length && progress >= goal.target) {
     state.completedMissions++;
     const rewardCents = [30000, 25000, 40000][mission];
     state.money += rewardCents;
