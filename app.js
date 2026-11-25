@@ -34,7 +34,7 @@ const initialState = {
   },
   education: { consecutiveMistakes: 0 },
   disasters: { daysUntilEvent: 7 + Math.floor(Math.random() * 8), eventsTriggered: 0 },
-  study: { challengeCursor: 0, financeCursor: 0, adminCursor: 0, seed: createStudySeed() }
+  study: { challengeCursor: 0, financeCursor: 0, adminCursor: 0, dailyDate: "", dailyCorrect: 0, dailyPerfect: true, seed: createStudySeed() }
 };
 const saveKey = "cidade-em-construcao-v1";
 const buildingById = new Map(buildings.map((building) => [building.id, building]));
@@ -120,6 +120,9 @@ function normalizeState(candidate) {
   const financeCursor = Number.isSafeInteger(financeCursorValue) && financeCursorValue >= 0
     ? financeCursorValue : 0;
   const adminCursor = Number.isSafeInteger(study.adminCursor) && study.adminCursor >= 0 ? study.adminCursor : 0;
+  const dailyCorrect = Number.isSafeInteger(study.dailyCorrect) && study.dailyCorrect >= 0 ? study.dailyCorrect : 0;
+  const dailyDate = typeof study.dailyDate === "string" ? study.dailyDate : "";
+  const dailyPerfect = typeof study.dailyPerfect === "boolean" ? study.dailyPerfect : true;
   const seed = Number.isInteger(study.seed) && study.seed >= 0
     ? study.seed >>> 0 : initialState.study.seed;
   const savedPayroll = candidate.payroll && typeof candidate.payroll === "object" ? candidate.payroll : {};
@@ -196,7 +199,7 @@ function normalizeState(candidate) {
     simulation,
     education,
     disasters,
-    study: { challengeCursor, financeCursor, adminCursor, seed }
+    study: { challengeCursor, financeCursor, adminCursor, dailyDate, dailyCorrect, dailyPerfect, seed }
   };
 }
 function loadGuestState() {
@@ -360,8 +363,11 @@ function renderBuildings() {
     const card = document.createElement("article");
     card.className = "build-card";
     const canAfford = state.money >= building.cost && state.materials >= building.material;
-    const actionLabel = canAfford ? "Construir" : "Faltam recursos";
-    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} mat.</span><button class="build-action" ${canAfford ? "" : "disabled"}>${actionLabel}</button></div>`;
+    const shortage = [
+      state.money < building.cost ? `faltam ${formatBRL(building.cost - state.money)}` : "",
+      state.materials < building.material ? `faltam ${building.material - state.materials} materiais de construção` : ""
+    ].filter(Boolean).join(" e ");
+    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} unidades de insumos${shortage ? `<br><small>${shortage}</small>` : ""}</span><button class="build-action">${canAfford ? "Construir" : "Ver falta"}</button></div>`;
     card.querySelector("button").addEventListener("click", () => startQuiz(building));
     list.append(card);
   });
@@ -629,7 +635,10 @@ function playAlertSound(type) {
 function startQuiz(building) {
   if (!requireLiveCity()) return;
   if (state.money < building.cost || state.materials < building.material) {
-    showToast("Recursos insuficientes para esta construção.");
+    const missingMoney = Math.max(0, building.cost - state.money);
+    const missingMaterials = Math.max(0, building.material - state.materials);
+    const details = [missingMoney ? `faltam ${formatBRL(missingMoney)} no orçamento` : "", missingMaterials ? `faltam ${missingMaterials} materiais de construção` : ""].filter(Boolean).join(" e ");
+    showToast(`Não é possível construir ${building.name}: ${details}.`);
     return;
   }
   try {
@@ -832,6 +841,8 @@ function updateTeacherSupport() {
 }
 
 function registerWrongAnswer(modal, feedback) {
+  refreshDailyStudyProgress();
+  state.study.dailyPerfect = false;
   state.money -= 30000;
   state.education.consecutiveMistakes++;
   recordTransaction("Penalidade por resposta incorreta", -30000);
@@ -849,12 +860,23 @@ function registerWrongAnswer(modal, feedback) {
 }
 
 function grantQuestionReward() {
+  refreshDailyStudyProgress();
+  if (state.study.dailyPerfect) state.study.dailyCorrect++;
   const rewardCents = state.simulation.questionRewardCents;
   state.money += rewardCents;
   recordTransaction("Recompensa por resposta correta", rewardCents);
   save();
   updateEconomyDisplays();
   return rewardCents;
+}
+
+function refreshDailyStudyProgress() {
+  const today = `${state.month}-${state.day}`;
+  if (state.study.dailyDate !== today) {
+    state.study.dailyDate = today;
+    state.study.dailyCorrect = 0;
+    state.study.dailyPerfect = true;
+  }
 }
 
 function hireTeacher(modal) {
@@ -1327,6 +1349,23 @@ byId("loan-form").addEventListener("submit", requestLoan);
   byId(id).addEventListener("change", updateLoanPreview);
 });
 byId("practice-interest").addEventListener("click", () => showFinanceQuestion("practice-admin", null));
+byId("buy-building-materials").addEventListener("click", () => {
+  if (!requireLiveCity()) return;
+  refreshDailyStudyProgress();
+  if (!state.study.dailyPerfect || state.study.dailyCorrect < 10) {
+    const remaining = Math.max(0, 10 - state.study.dailyCorrect);
+    showToast(state.study.dailyPerfect
+      ? `Acerte mais ${remaining} questão(ões) hoje sem errar para liberar a compra.`
+      : "Você errou uma questão hoje. A compra de insumos será liberada amanhã, após 10 acertos sem erros.");
+    return;
+  }
+  if (state.money < 10000) { showToast(`Faltam ${formatBRL(10000 - state.money)} no orçamento para comprar os insumos.`); return; }
+  state.money -= 10000;
+  state.materials += 20;
+  recordTransaction("Compra de 20 unidades de insumos para obras", -10000);
+  save(); render();
+  showToast("Compra concluída: 20 unidades de insumos adicionadas ao estoque.");
+});
 byId("close-finance").addEventListener("click", closeFinanceQuestion);
 byId("finance-submit").addEventListener("click", submitFinanceAnswer);
 byId("finance-hire-teacher").addEventListener("click", () => hireTeacher("finance"));
