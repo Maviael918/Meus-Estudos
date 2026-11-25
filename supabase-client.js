@@ -55,17 +55,23 @@
       if (error) throw error;
       return data;
     },
-    async saveCity(ownerId, name, gameState) {
+    async saveCity(name, gameState, baseMoney, baseMaterials, operationId) {
       const supabase = await getClient();
       if (!supabase) throw new Error("Supabase não está configurado.");
-      const { data, error } = await supabase
-        .from("cities")
-        .upsert(
-          { owner_id: ownerId, name, state_version: 1, game_state: gameState },
-          { onConflict: "owner_id" }
-        )
-        .select("id, name, state_version")
-        .single();
+      const { data, error } = await supabase.rpc("save_city_state", {
+        p_name: name,
+        p_game_state: gameState,
+        p_base_money: baseMoney,
+        p_base_materials: baseMaterials,
+        p_operation_id: operationId
+      });
+      if (error) throw error;
+      return data;
+    },
+    async syncCityClock() {
+      const supabase = await getClient();
+      if (!supabase) throw new Error("Supabase não está configurado.");
+      const { data, error } = await supabase.rpc("sync_city_clock");
       if (error) throw error;
       return data;
     }

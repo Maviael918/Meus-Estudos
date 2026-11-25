@@ -3,15 +3,19 @@
 ## Regras da simulação
 
 - Todos os valores do jogo são em reais (R$), armazenados como centavos inteiros.
-- A prefeitura começa com 3 funcionários, cada um recebe R$ 500,00 a cada 7 dias de jogo. A folha semanal total é de R$ 1.500,00 e é debitada automaticamente do orçamento.
+- A prefeitura começa com 3 funcionários, cada um recebe R$ 500,00 a cada 7 dias civis. A folha semanal total é de R$ 1.500,00 e é debitada automaticamente do orçamento.
 - O saldo pode ficar negativo após o pagamento da folha; construções continuam bloqueadas enquanto o orçamento não cobrir seus custos.
+- Cada resposta errada custa R$ 300,00 e é registrada no histórico da conta municipal quando ela está aberta. Cinco erros consecutivos oferecem a contratação opcional de uma professora por R$ 800,00 por semana; a professora pode dar uma dica por desafio.
+- A cada 7 a 14 datas civis, um desastre leve aleatório pode exigir de R$ 200,00 a R$ 800,00 em reparos. O próximo alerta aparece no painel, o ocorrido é anunciado e registrado no histórico se a conta estiver aberta.
+- O jogo toca alertas diferentes para acertos, erros e desastres. A preferência de áudio pode ser desligada e é guardada neste dispositivo; o áudio começa após uma interação do jogador, conforme as regras dos navegadores móveis.
+- O calendário real é controlado pelo servidor Supabase no fuso `America/Sao_Paulo`; não existe botão para avançar o dia. A receita diária é creditada na mudança de data em Brasília, e a folha vence a cada 7 datas civis. O servidor recupera todos os dias vencidos quando a cidade volta a sincronizar.
 - A contagem para o próximo pagamento e o número de folhas pagas são persistidos por cidade para evitar reiniciar o calendário ao recarregar ou sincronizar.
 - A conta municipal é gratuita e usa o mesmo saldo do orçamento apresentado no painel da cidade.
 - A cidade pode ter apenas um empréstimo ativo por vez, nos valores de R$ 1.000,00, R$ 5.000,00 ou R$ 10.000,00.
 - Empréstimos de juros simples cobram 2% ao mês; empréstimos de juros compostos cobram 1,5% ao mês. O jogador escolhe 6 ou 12 parcelas.
 - Antes da liberação, o jogador resolve um desafio do mesmo tipo de juros. O valor calculado no desafio é um exemplo de estudo; o contrato mostra separadamente o total e as parcelas do produto selecionado.
-- Uma parcela é cobrada ao avançar para o mês seguinte no jogo (a cada 30 dias simulados). Se faltar saldo, ela fica pendente e o jogo tenta novamente no próximo mês, sem multa nesta versão educativa.
-- O saldo, a conta, o contrato e os avanços das bibliotecas de estudo são guardados no progresso local e, quando há sessão, sincronizados no estado da cidade no Supabase.
+- Uma parcela vence no primeiro dia de cada mês civil em Brasília. Se faltar saldo, ela fica pendente e o jogo tenta novamente no próximo mês, sem multa nesta versão educativa.
+- O saldo, a conta, o contrato e os avanços das bibliotecas de estudo são guardados no progresso local e, quando há sessão, sincronizados no estado da cidade no Supabase. O calendário real exige uma conta autenticada e a migração de relógio descrita em [SUPABASE.md](./SUPABASE.md).
 
 ## Desafios de vários assuntos
 

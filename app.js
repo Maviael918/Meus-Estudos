@@ -11,13 +11,24 @@ function createStudySeed() {
   return Math.floor(Math.random() * 0x100000000);
 }
 
+function loadSoundPreference() {
+  try {
+    return localStorage.getItem("cidade-em-construcao-audio-v1") !== "false";
+  } catch (error) {
+    console.warn("Não foi possível ler a preferência de áudio.", error);
+    return true;
+  }
+}
+
 const initialState = {
   economyVersion: 2,
   money: 250000, population: 24, materials: 120, happiness: 72, knowledge: 0,
   built: [{ id: "prefeitura", name: "Prefeitura", icon: "🏛️", type: "cityhall", cell: 7 }],
   day: 18, month: 3, completedMissions: 0, expanded: false,
   bank: { accountNumber: null, openedAt: null, loan: null, transactions: [] },
-  payroll: { employeeCount: 3, weeklySalaryCents: 50000, daysUntilPayment: 7, paymentsMade: 0 },
+  payroll: { employeeCount: 3, weeklySalaryCents: 50000, teacherCount: 0, teacherWeeklySalaryCents: 80000, daysUntilPayment: 7, paymentsMade: 0 },
+  education: { consecutiveMistakes: 0 },
+  disasters: { daysUntilEvent: 7 + Math.floor(Math.random() * 8), eventsTriggered: 0 },
   study: { challengeCursor: 0, financeCursor: 0, seed: createStudySeed() }
 };
 const saveKey = "cidade-em-construcao-v1";
@@ -25,6 +36,14 @@ const buildingById = new Map(buildings.map((building) => [building.id, building]
 let state = loadGuestState();
 let cloudUser = null;
 let cloudReady = false;
+let clockSyncing = false;
+let clockSyncError = false;
+let serverTimeAtSync = null;
+let monotonicTimeAtSync = 0;
+let cloudSaveFailed = false;
+let cloudMoneyBase = null;
+let cloudMaterialsBase = null;
+let cloudPendingSave = null;
 let cloudSaveTimer;
 let cloudWrite = Promise.resolve();
 let selectedBuilding = null;
@@ -35,6 +54,9 @@ let pendingLoanOffer = null;
 let authMode = "sign-in";
 let installPrompt = null;
 let toastTimer;
+let audioContext = null;
+let audioSupportWarningShown = false;
+let soundEnabled = loadSoundPreference();
 
 const byId = (id) => document.getElementById(id);
 function normalizeState(candidate) {
@@ -62,7 +84,7 @@ function normalizeState(candidate) {
     if (!Number.isSafeInteger(candidate[field])) return null;
     if (field === "money" ? economyVersion === 1 && candidate[field] < 0 : candidate[field] < 0) return null;
   }
-  if (candidate.happiness > 100 || candidate.day < 1 || candidate.day > 30 || candidate.month < 1 || candidate.month > 12 || typeof candidate.expanded !== "boolean") return null;
+  if (candidate.happiness > 100 || candidate.day < 1 || candidate.day > 31 || candidate.month < 1 || candidate.month > 12 || typeof candidate.expanded !== "boolean") return null;
   const bank = candidate.bank && typeof candidate.bank === "object" ? candidate.bank : {};
   const transactions = Array.isArray(bank.transactions) ? bank.transactions.slice(-30).filter((entry) => (
     entry && typeof entry.label === "string" && Number.isSafeInteger(entry.amountCents)
@@ -100,10 +122,26 @@ function normalizeState(candidate) {
       ? savedPayroll.employeeCount : initialState.payroll.employeeCount,
     weeklySalaryCents: Number.isSafeInteger(savedPayroll.weeklySalaryCents) && savedPayroll.weeklySalaryCents >= 0
       ? savedPayroll.weeklySalaryCents : initialState.payroll.weeklySalaryCents,
+    teacherCount: Number.isSafeInteger(savedPayroll.teacherCount) && savedPayroll.teacherCount >= 0
+      ? savedPayroll.teacherCount : 0,
+    teacherWeeklySalaryCents: Number.isSafeInteger(savedPayroll.teacherWeeklySalaryCents) && savedPayroll.teacherWeeklySalaryCents >= 0
+      ? savedPayroll.teacherWeeklySalaryCents : initialState.payroll.teacherWeeklySalaryCents,
     daysUntilPayment: Number.isSafeInteger(savedPayroll.daysUntilPayment) && savedPayroll.daysUntilPayment >= 1 && savedPayroll.daysUntilPayment <= 7
       ? savedPayroll.daysUntilPayment : initialState.payroll.daysUntilPayment,
     paymentsMade: Number.isSafeInteger(savedPayroll.paymentsMade) && savedPayroll.paymentsMade >= 0
       ? savedPayroll.paymentsMade : initialState.payroll.paymentsMade
+  };
+  const savedEducation = candidate.education && typeof candidate.education === "object" ? candidate.education : {};
+  const education = {
+    consecutiveMistakes: Number.isSafeInteger(savedEducation.consecutiveMistakes) && savedEducation.consecutiveMistakes >= 0
+      ? savedEducation.consecutiveMistakes : 0
+  };
+  const savedDisasters = candidate.disasters && typeof candidate.disasters === "object" ? candidate.disasters : {};
+  const disasters = {
+    daysUntilEvent: Number.isSafeInteger(savedDisasters.daysUntilEvent) && savedDisasters.daysUntilEvent >= 1 && savedDisasters.daysUntilEvent <= 14
+      ? savedDisasters.daysUntilEvent : initialState.disasters.daysUntilEvent,
+    eventsTriggered: Number.isSafeInteger(savedDisasters.eventsTriggered) && savedDisasters.eventsTriggered >= 0
+      ? savedDisasters.eventsTriggered : 0
   };
   return {
     ...initialState,
@@ -113,6 +151,8 @@ function normalizeState(candidate) {
     built,
     bank: { accountNumber, openedAt: typeof bank.openedAt === "string" ? bank.openedAt : null, loan, transactions },
     payroll,
+    education,
+    disasters,
     study: { challengeCursor, financeCursor, seed }
   };
 }
@@ -128,21 +168,65 @@ function loadGuestState() {
   }
   return structuredClone(initialState);
 }
-function queueCloudSave(ownerId, snapshot) {
-  cloudWrite = cloudWrite.then(() => window.supabaseGame.saveCity(ownerId, "Vila das Flores", snapshot))
-    .catch((error) => {
-      console.error("Não foi possível sincronizar a cidade com o Supabase.", error);
-      showToast("Falha ao sincronizar com o Supabase. Seu progresso online pode estar desatualizado.");
-    });
+function queueCloudSave() {
+  cloudWrite = cloudWrite.then(async () => {
+    try {
+      if (!cloudPendingSave) {
+        cloudPendingSave = {
+          operationId: createSaveOperationId(),
+          snapshot: structuredClone(state),
+          baseMoney: cloudMoneyBase,
+          baseMaterials: cloudMaterialsBase
+        };
+      }
+      const request = cloudPendingSave;
+      const snapshot = request.snapshot;
+      const saved = await window.supabaseGame.saveCity(
+        "Vila das Flores",
+        snapshot,
+        request.baseMoney,
+        request.baseMaterials,
+        request.operationId
+      );
+      if (!Number.isSafeInteger(saved?.game_state?.money)
+        || !Number.isSafeInteger(saved?.game_state?.materials)) {
+        throw new Error("O Supabase retornou saldos inválidos ao salvar.");
+      }
+      const outstandingMoney = state.money - snapshot.money;
+      const outstandingMaterials = state.materials - snapshot.materials;
+      cloudMoneyBase = saved.game_state.money;
+      cloudMaterialsBase = saved.game_state.materials;
+      state.money = cloudMoneyBase + outstandingMoney;
+      state.materials = Math.max(0, cloudMaterialsBase + outstandingMaterials);
+      cloudPendingSave = null;
+      updateEconomyDisplays();
+      byId("materials-value").textContent = formatNumber(state.materials);
+      cloudSaveFailed = false;
+    } catch (error) {
+      const firstFailure = !cloudSaveFailed;
+      cloudSaveFailed = true;
+      clockSyncError = true;
+      if (firstFailure) {
+        console.error("Não foi possível sincronizar a cidade com o Supabase.", error);
+        showToast("Falha ao sincronizar com o Supabase. Seu progresso online pode estar desatualizado.");
+      }
+      updateServerClockDisplay();
+    }
+  });
   return cloudWrite;
+}
+function createSaveOperationId() {
+  return globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 function save() {
   if (cloudUser) {
     if (!cloudReady) return;
     window.clearTimeout(cloudSaveTimer);
     cloudSaveTimer = window.setTimeout(() => {
-      const snapshot = structuredClone(state);
-      queueCloudSave(cloudUser.id, snapshot);
+      cloudSaveTimer = undefined;
+      queueCloudSave();
     }, 500);
     return;
   }
@@ -151,6 +235,50 @@ function save() {
 }
 function formatNumber(number) { return new Intl.NumberFormat("pt-BR").format(number); }
 function formatBRL(cents) { return window.financeQuestionBank.formatMoney(cents); }
+function requireLiveCity() {
+  if (cloudUser && cloudReady && !clockSyncing) return true;
+  if (!cloudUser) {
+    showToast("Entre na sua conta para jogar com o calendário oficial de Brasília.");
+    showAuthModal();
+  } else {
+    showToast("Aguarde a sincronização do calendário com o Supabase.");
+  }
+  return false;
+}
+
+function updateServerClockDisplay() {
+  const date = byId("server-date");
+  const time = byId("server-time");
+  if (!date || !time) return;
+  if (!cloudUser || serverTimeAtSync === null) {
+    date.textContent = cloudUser ? "Conectando ao calendário oficial" : "Entre na sua conta para iniciar";
+    time.textContent = "Relógio oficial do Supabase · Brasília";
+    byId("clock-status").textContent = cloudUser ? "Reconecte ao Supabase" : "Faça login para jogar";
+    byId("clock-login-button").textContent = cloudUser ? "Reconectar calendário" : "Entrar para jogar";
+    byId("clock-login-button").classList.toggle("hidden", cloudReady && !clockSyncError);
+    return;
+  }
+
+  const now = new Date(serverTimeAtSync + (performance.now() - monotonicTimeAtSync));
+  date.textContent = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(now);
+  time.textContent = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(now) + " · Horário de Brasília";
+  byId("clock-status").textContent = clockSyncing
+    ? "Sincronizando…"
+    : clockSyncError ? "Sem conexão com o calendário" : "Relógio Supabase";
+  byId("clock-login-button").textContent = "Tentar sincronizar";
+  byId("clock-login-button").classList.toggle("hidden", cloudReady && !clockSyncError);
+}
 
 function renderMap() {
   const map = byId("city-map");
@@ -168,6 +296,7 @@ function renderMap() {
     } else if (cell >= 15 && !state.expanded) {
       tile.setAttribute("aria-label", "Área bloqueada — desbloqueie com um desafio");
       tile.textContent = "🔒";
+      tile.disabled = !cloudReady;
       tile.addEventListener("click", startExpansionQuiz);
     } else {
       tile.setAttribute("aria-label", `Terreno disponível ${cell + 1}; clique para construir`);
@@ -188,7 +317,7 @@ function renderBuildings() {
     const card = document.createElement("article");
     card.className = "build-card";
     const canAfford = state.money >= building.cost && state.materials >= building.material;
-    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} mat.</span><button class="build-action" ${canAfford ? "" : "disabled"}>Construir</button></div>`;
+    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} mat.</span><button class="build-action" ${canAfford && cloudReady ? "" : "disabled"}>Construir</button></div>`;
     card.querySelector("button").addEventListener("click", () => startQuiz(building));
     list.append(card);
   });
@@ -209,7 +338,7 @@ function renderBank() {
   byId("bank-account-closed").classList.toggle("hidden", accountOpen);
   byId("bank-account-open").classList.toggle("hidden", !accountOpen);
   byId("bank-feedback").textContent = "";
-  byId("bank-account-closed").querySelector("button").disabled = accountOpen;
+  byId("bank-account-closed").querySelector("button").disabled = accountOpen || !cloudReady;
 
   if (accountOpen) {
     byId("bank-account-number").textContent = state.bank.accountNumber;
@@ -264,6 +393,13 @@ function updateLoanPreview() {
 }
 
 function render() {
+  updateServerClockDisplay();
+  byId("practice-interest").disabled = !cloudReady;
+  byId("open-bank-account").disabled = !cloudReady || Boolean(state.bank.accountNumber);
+  byId("loan-amount").disabled = !cloudReady;
+  byId("loan-method").disabled = !cloudReady;
+  byId("loan-term").disabled = !cloudReady;
+  byId("request-loan").disabled = !cloudReady;
   byId("money-value").textContent = formatBRL(state.money);
   updatePayrollDisplay();
   byId("population-value").textContent = formatNumber(state.population);
@@ -301,16 +437,72 @@ function render() {
 }
 
 function updatePayrollDisplay() {
-  const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents;
+  const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents
+    + state.payroll.teacherCount * state.payroll.teacherWeeklySalaryCents;
   byId("payroll-employee-count").textContent = formatNumber(state.payroll.employeeCount);
   byId("payroll-weekly-wage").textContent = formatBRL(state.payroll.weeklySalaryCents);
+  byId("payroll-teacher-count").textContent = formatNumber(state.payroll.teacherCount);
   byId("payroll-weekly-total").textContent = formatBRL(total);
   byId("payroll-next-payment").textContent = state.payroll.daysUntilPayment === 1
-    ? "Próximo avanço"
+    ? "Amanhã"
     : `Em ${state.payroll.daysUntilPayment} dias`;
+  byId("next-disaster-counter").textContent = cloudReady
+    ? `Possível em ${state.disasters.daysUntilEvent} dias`
+    : "Aguardando login";
+}
+
+function updateEconomyDisplays() {
+  byId("money-value").textContent = formatBRL(state.money);
+  if (state.bank.accountNumber) {
+    byId("bank-balance").textContent = formatBRL(state.money);
+    renderBank();
+  }
+  renderBuildings();
+}
+
+function playAlertSound(type) {
+  if (!soundEnabled) return;
+  const AudioContextType = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextType) {
+    if (!audioSupportWarningShown) console.warn("Este navegador não oferece suporte a sons do jogo.");
+    audioSupportWarningShown = true;
+    return;
+  }
+
+  const patterns = {
+    correct: [{ frequency: 660, delay: 0 }, { frequency: 880, delay: 0.12 }],
+    wrong: [{ frequency: 220, delay: 0 }, { frequency: 165, delay: 0.15 }],
+    disaster: [{ frequency: 330, delay: 0 }, { frequency: 247, delay: 0.18 }, { frequency: 196, delay: 0.36 }],
+    teacher: [{ frequency: 523, delay: 0 }, { frequency: 659, delay: 0.14 }, { frequency: 784, delay: 0.28 }]
+  };
+
+  try {
+    audioContext ||= new AudioContextType();
+    if (audioContext.state === "suspended") {
+      audioContext.resume().catch((error) => console.warn("Não foi possível iniciar o áudio do jogo.", error));
+    }
+    const now = audioContext.currentTime;
+    for (const note of patterns[type]) {
+      const oscillator = audioContext.createOscillator();
+      const volume = audioContext.createGain();
+      const start = now + note.delay;
+      oscillator.type = type === "wrong" || type === "disaster" ? "triangle" : "sine";
+      oscillator.frequency.setValueAtTime(note.frequency, start);
+      volume.gain.setValueAtTime(0.0001, start);
+      volume.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
+      oscillator.connect(volume);
+      volume.connect(audioContext.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.13);
+    }
+  } catch (error) {
+    console.warn("Não foi possível reproduzir o alerta sonoro.", error);
+  }
 }
 
 function startQuiz(building) {
+  if (!requireLiveCity()) return;
   if (state.money < building.cost || state.materials < building.material) {
     showToast("Recursos insuficientes para esta construção.");
     return;
@@ -331,6 +523,11 @@ function startQuiz(building) {
 function showCityQuiz(question, icon, title, intro, type) {
   selectedAnswer = null;
   activeQuiz.type = type;
+  activeQuiz.hintUsed = false;
+  byId("quiz-teacher-hint-button").disabled = false;
+  byId("quiz-teacher-hint-button").textContent = "💡 Pedir dica à professora";
+  byId("quiz-teacher-hint").classList.add("hidden");
+  updateTeacherSupport();
   byId("quiz-subject").textContent = question.subject;
   byId("quiz-building-icon").textContent = icon;
   byId("quiz-title").textContent = title;
@@ -360,6 +557,7 @@ function showCityQuiz(question, icon, title, intro, type) {
 }
 
 function startExpansionQuiz() {
+  if (!requireLiveCity()) return;
   if (state.expanded) return;
   try {
     const question = window.studyQuestionBank.nextQuestion(state.study.challengeCursor, state.study.seed);
@@ -377,9 +575,13 @@ function startExpansionQuiz() {
 function closeQuiz() {
   byId("quiz-modal").classList.add("hidden");
   byId("quiz-modal").setAttribute("aria-hidden", "true");
+  byId("quiz-teacher-offer").classList.add("hidden");
+  byId("quiz-teacher-hint-button").classList.add("hidden");
+  byId("quiz-teacher-hint").classList.add("hidden");
 }
 
 function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
+  if (!requireLiveCity()) return;
   try {
     const isLoan = purpose === "loan";
     const question = isLoan
@@ -391,6 +593,10 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
       updateLibraryCounter();
     }
     activeFinanceQuestion = { question, purpose, loanOffer };
+    byId("finance-teacher-hint-button").disabled = false;
+    byId("finance-teacher-hint-button").textContent = "💡 Pedir dica à professora";
+    byId("finance-teacher-hint").classList.add("hidden");
+    updateTeacherSupport();
     selectedAnswer = null;
     byId("finance-subject").textContent = question.subject;
     byId("finance-sequence").textContent = isLoan
@@ -434,6 +640,7 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
 }
 
 function openBankAccount() {
+  if (!requireLiveCity()) return;
   if (state.bank.accountNumber) return;
   const randomDigits = new Uint32Array(2);
   if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(randomDigits);
@@ -453,6 +660,7 @@ function openBankAccount() {
 
 function requestLoan(event) {
   event.preventDefault();
+  if (!requireLiveCity()) return;
   if (!state.bank.accountNumber) {
     showToast("Abra a conta municipal antes de solicitar um empréstimo.");
     return;
@@ -478,22 +686,99 @@ function requestLoan(event) {
 function closeFinanceQuestion() {
   byId("finance-modal").classList.add("hidden");
   byId("finance-modal").setAttribute("aria-hidden", "true");
+  byId("finance-teacher-offer").classList.add("hidden");
+  byId("finance-teacher-hint-button").classList.add("hidden");
+  byId("finance-teacher-hint").classList.add("hidden");
   activeFinanceQuestion = null;
   pendingLoanOffer = null;
 }
 
+function updateTeacherSupport() {
+  const employed = state.payroll.teacherCount > 0;
+  for (const prefix of ["quiz", "finance"]) {
+    byId(`${prefix}-teacher-offer`).classList.toggle("hidden", employed || state.education.consecutiveMistakes < 5);
+    byId(`${prefix}-teacher-hint-button`).classList.toggle("hidden", !employed);
+  }
+}
+
+function registerWrongAnswer(modal, feedback) {
+  state.money -= 30000;
+  state.education.consecutiveMistakes++;
+  recordTransaction("Penalidade por resposta incorreta", -30000);
+  playAlertSound("wrong");
+  feedback.textContent = `Resposta incorreta: foram descontados R$ 300,00. Erros seguidos: ${state.education.consecutiveMistakes}. Tente novamente.`;
+  feedback.className = "quiz-feedback";
+  selectedAnswer = null;
+  byId(`${modal}-submit`).disabled = true;
+  updateEconomyDisplays();
+  updateTeacherSupport();
+  if (state.education.consecutiveMistakes === 5 && state.payroll.teacherCount === 0) {
+    window.setTimeout(() => playAlertSound("teacher"), 350);
+  }
+  save();
+}
+
+function hireTeacher(modal) {
+  if (!requireLiveCity()) return;
+  if (state.payroll.teacherCount > 0 || state.education.consecutiveMistakes < 5) return;
+  state.payroll.teacherCount = 1;
+  state.education.consecutiveMistakes = 0;
+  byId(`${modal}-teacher-offer`).classList.add("hidden");
+  byId(`${modal}-teacher-hint-button`).classList.remove("hidden");
+  recordTransaction("Contratação de professora — salário semanal", 0);
+  updatePayrollDisplay();
+  save();
+  showToast("Professora contratada! Ela recebe R$ 800,00 por semana e pode dar uma dica em cada desafio.");
+}
+
+function declineTeacher(modal) {
+  if (!requireLiveCity()) return;
+  state.education.consecutiveMistakes = 0;
+  byId(`${modal}-teacher-offer`).classList.add("hidden");
+  save();
+}
+
+function requestTeacherHint(modal) {
+  if (!requireLiveCity()) return;
+  const question = modal === "quiz" ? activeQuiz : activeFinanceQuestion?.question;
+  if (!question || state.payroll.teacherCount === 0) return;
+  const used = modal === "quiz" ? activeQuiz.hintUsed : activeFinanceQuestion.hintUsed;
+  if (used) return;
+
+  const hints = {
+    "MATEMÁTICA": "Separe os números importantes do enunciado e escolha a operação que relaciona esses dados.",
+    "PORTUGUÊS": "Leia a frase em voz alta e observe a concordância, a pontuação e o sentido das palavras.",
+    "CIÊNCIAS": "Pense no conceito científico ligado ao fenômeno ou ser vivo citado.",
+    "GEOGRAFIA": "Observe as características do lugar, a orientação e a relação entre as pessoas e o espaço.",
+    "HISTÓRIA": "Repare nas datas, na ordem dos acontecimentos e no contexto da época.",
+    "MEIO AMBIENTE": "Considere como cada alternativa afeta os recursos naturais e os seres vivos.",
+    "CIDADANIA": "Pense no bem comum, nos direitos das pessoas e nos serviços da comunidade.",
+    "MATEMÁTICA FINANCEIRA": "Identifique o capital, a taxa e o prazo. Em juros compostos, a taxa incide sobre o montante acumulado."
+  };
+  const subject = question.subject;
+  const hintId = `${modal}-teacher-hint`;
+  const button = byId(`${modal}-teacher-hint-button`);
+  byId(hintId).textContent = hints[subject] || "Releia o enunciado, identifique o que está sendo perguntado e elimine as alternativas que não combinam.";
+  byId(hintId).classList.remove("hidden");
+  button.disabled = true;
+  button.textContent = "Dica usada neste desafio";
+  if (modal === "quiz") activeQuiz.hintUsed = true;
+  else activeFinanceQuestion.hintUsed = true;
+}
+
 function submitFinanceAnswer() {
+  if (!requireLiveCity()) return;
   if (!activeFinanceQuestion || selectedAnswer === null) return;
   const { question, purpose, loanOffer } = activeFinanceQuestion;
   const feedback = byId("finance-feedback");
   if (selectedAnswer !== question.correctIndex) {
-    feedback.textContent = purpose === "loan"
-      ? "Essa alternativa não confere. Revise a taxa e o prazo e tente novamente."
-      : "Essa alternativa não confere. Revise o conteúdo e tente novamente.";
-    feedback.className = "quiz-feedback";
+    registerWrongAnswer("finance", feedback);
     return;
   }
 
+  state.education.consecutiveMistakes = 0;
+  playAlertSound("correct");
+  updateTeacherSupport();
   state.knowledge += 2;
   feedback.textContent = `Correto! ${question.explanation}`;
   feedback.className = "quiz-feedback correct";
@@ -513,6 +798,9 @@ function submitFinanceAnswer() {
     );
     state.bank.loan = {
       ...loanOffer,
+      contractId: globalThis.crypto?.randomUUID
+        ? globalThis.crypto.randomUUID()
+        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
       principalCents: loanOffer.amountCents,
       totalCents: calculation.totalCents,
       installmentCents: calculation.installmentCents,
@@ -524,7 +812,7 @@ function submitFinanceAnswer() {
     state.money += loanOffer.amountCents;
     recordTransaction("Empréstimo liberado pelo Banco Central da Cidade", loanOffer.amountCents);
   } else {
-    recordTransaction("Aprendizado: desafio de matemática financeira", 0);
+    recordTransaction(`Aprendizado: ${question.subject.toLowerCase()}`, 0);
   }
 
   save();
@@ -538,48 +826,17 @@ function submitFinanceAnswer() {
   }, 850);
 }
 
-function chargeMonthlyLoanInstallment() {
-  const loan = state.bank.loan;
-  if (!loan || !["active", "overdue"].includes(loan.status)) return null;
-  const amountDue = loan.monthsRemaining === 1
-    ? loan.remainingCents
-    : Math.min(loan.installmentCents, loan.remainingCents);
-  if (state.money < amountDue) {
-    loan.status = "overdue";
-    loan.missedPayments++;
-    recordTransaction("Parcela não paga — saldo insuficiente", 0);
-    return `Parcela do empréstimo de ${formatBRL(amountDue)} pendente por falta de saldo.`;
-  }
-  state.money -= amountDue;
-  loan.remainingCents -= amountDue;
-  loan.monthsRemaining--;
-  loan.status = loan.monthsRemaining === 0 ? "paid" : "active";
-  recordTransaction("Parcela do empréstimo", -amountDue);
-  return loan.status === "paid"
-    ? `Empréstimo quitado com a parcela de ${formatBRL(amountDue)}.`
-    : `Parcela do empréstimo de ${formatBRL(amountDue)} paga; restam ${loan.monthsRemaining}.`;
-}
-
-function payWeeklyPayroll() {
-  state.payroll.daysUntilPayment--;
-  if (state.payroll.daysUntilPayment > 0) return false;
-
-  const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents;
-  state.money -= total;
-  state.payroll.paymentsMade++;
-  state.payroll.daysUntilPayment = 7;
-  recordTransaction(`Folha semanal (${state.payroll.employeeCount} funcionários)`, -total);
-  return true;
-}
-
 function submitAnswer() {
+  if (!requireLiveCity()) return;
   if (selectedAnswer === null || !activeQuiz || (!selectedBuilding && activeQuiz.type !== "expansion")) return;
   const feedback = byId("quiz-feedback");
   if (selectedAnswer !== activeQuiz.answer) {
-    feedback.textContent = "Ainda não! Pense com calma e tente outra resposta.";
-    feedback.className = "quiz-feedback";
+    registerWrongAnswer("quiz", feedback);
     return;
   }
+  state.education.consecutiveMistakes = 0;
+  playAlertSound("correct");
+  updateTeacherSupport();
   if (activeQuiz.type === "expansion") {
     state.expanded = true;
     byId("quiz-feedback").textContent = `Correto! ${activeQuiz.explain}`;
@@ -640,6 +897,15 @@ function showToast(message) {
 function setAccountButton() {
   byId("account-label").textContent = cloudUser ? "Sair" : "Entrar";
   byId("account-button").setAttribute("aria-label", cloudUser ? "Sair da conta" : "Entrar ou criar conta");
+}
+
+function updateSoundToggle() {
+  const button = byId("sound-toggle");
+  button.classList.toggle("sound-off", !soundEnabled);
+  button.textContent = soundEnabled ? "♫" : "🔇";
+  button.title = soundEnabled ? "Desativar sons" : "Ativar sons";
+  button.setAttribute("aria-label", button.title);
+  button.setAttribute("aria-pressed", String(soundEnabled));
 }
 
 function showAuthModal() {
@@ -720,7 +986,7 @@ async function registerServiceWorker() {
 function setAuthMode(mode) {
   authMode = mode;
   const signingUp = mode === "sign-up";
-  byId("auth-title").textContent = signingUp ? "Crie sua conta de prefeito(a)" : "Entre para salvar sua cidade";
+  byId("auth-title").textContent = signingUp ? "Crie sua conta de prefeito(a)" : "Entre para iniciar o calendário";
   byId("auth-submit").textContent = signingUp ? "Criar conta" : "Entrar";
   byId("auth-mode-toggle").textContent = signingUp ? "Já tem conta? Entrar" : "Ainda não tem conta? Criar conta";
   byId("auth-password").autocomplete = signingUp ? "new-password" : "current-password";
@@ -733,6 +999,12 @@ async function activateUser(user) {
   await cloudWrite;
   cloudUser = user;
   cloudReady = false;
+  cloudSaveFailed = false;
+  clockSyncError = false;
+  cloudMoneyBase = null;
+  cloudMaterialsBase = null;
+  cloudPendingSave = null;
+  serverTimeAtSync = null;
   setAccountButton();
   const city = await window.supabaseGame.loadCity(user.id);
   if (city) {
@@ -741,10 +1013,81 @@ async function activateUser(user) {
     if (!loadedState) throw new Error("O progresso salvo tem um formato inválido. Nenhuma alteração foi gravada.");
     state = loadedState;
   }
+
+  cloudMoneyBase = state.money;
+  cloudMaterialsBase = state.materials;
+  const saved = await window.supabaseGame.saveCity(
+    "Vila das Flores",
+    structuredClone(state),
+    cloudMoneyBase,
+    cloudMaterialsBase,
+    createSaveOperationId()
+  );
+  cloudMoneyBase = saved.game_state.money;
+  cloudMaterialsBase = saved.game_state.materials;
+  const clock = await window.supabaseGame.syncCityClock();
+  const syncedState = normalizeState(clock.game_state);
+  if (!syncedState) throw new Error("O Supabase retornou um estado de cidade inválido.");
+  state = syncedState;
+  cloudMoneyBase = state.money;
+  cloudMaterialsBase = state.materials;
+  serverTimeAtSync = new Date(clock.server_now).getTime();
+  monotonicTimeAtSync = performance.now();
+  clockSyncError = false;
   cloudReady = true;
   render();
   closeAuthModal();
   showToast(city ? "Cidade carregada da sua conta Supabase." : "Conta conectada! Sua nova cidade está salva no Supabase.");
+  announceClockCatchUp(clock);
+}
+
+function announceClockCatchUp(clock) {
+  const processedDays = Number.isSafeInteger(clock.processed_days) ? clock.processed_days : 0;
+  const events = Array.isArray(clock.events) ? clock.events : [];
+  if (events.some((event) => event.type === "disaster")) playAlertSound("disaster");
+  if (processedDays > 0) {
+    const summary = events.map((event) => event.message).join(" ");
+    showToast(`Calendário atualizado: ${processedDays} dia(s) processado(s). ${summary}`);
+  }
+}
+
+async function synchronizeServerClock() {
+  if (!cloudUser || !cloudReady || clockSyncing) return;
+  clockSyncing = true;
+  updateServerClockDisplay();
+  try {
+    const hadPendingSave = cloudSaveTimer !== undefined;
+    window.clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = undefined;
+    if (hadPendingSave) await queueCloudSave();
+    if (cloudSaveFailed && !hadPendingSave) await queueCloudSave();
+    await cloudWrite;
+    if (cloudSaveFailed) throw new Error("O progresso pendente não foi salvo; calendário não aplicado para evitar perda de dados.");
+
+    const clock = await window.supabaseGame.syncCityClock();
+    const syncedState = normalizeState(clock.game_state);
+    if (!syncedState) throw new Error("O Supabase retornou um estado de cidade inválido.");
+    state = syncedState;
+    cloudMoneyBase = state.money;
+    cloudMaterialsBase = state.materials;
+    serverTimeAtSync = new Date(clock.server_now).getTime();
+    monotonicTimeAtSync = performance.now();
+    clockSyncError = false;
+    cloudReady = true;
+    render();
+    announceClockCatchUp(clock);
+  } catch (error) {
+    const firstFailure = !clockSyncError;
+    const saveFailed = cloudSaveFailed;
+    if (firstFailure) console.error("Não foi possível sincronizar o calendário com o Supabase.", error);
+    clockSyncError = true;
+    if (firstFailure && !saveFailed) {
+      showToast("Não foi possível atualizar o calendário. Ele será sincronizado quando a conexão voltar.");
+    }
+  } finally {
+    clockSyncing = false;
+    updateServerClockDisplay();
+  }
 }
 
 async function initializeSupabase() {
@@ -768,12 +1111,23 @@ async function handleAccountClick() {
     return;
   }
   try {
+    if (clockSyncing) {
+      showToast("Aguarde a sincronização do calendário antes de sair.");
+      return;
+    }
     window.clearTimeout(cloudSaveTimer);
-    if (cloudReady) await queueCloudSave(cloudUser.id, structuredClone(state));
+    if (cloudReady) await queueCloudSave();
     await cloudWrite;
+    if (cloudSaveFailed) throw new Error("O progresso não foi sincronizado; entre novamente em contato com o servidor antes de sair.");
     await window.supabaseGame.signOut();
     cloudUser = null;
     cloudReady = false;
+    cloudSaveFailed = false;
+    cloudMoneyBase = null;
+    cloudMaterialsBase = null;
+    cloudPendingSave = null;
+    clockSyncError = false;
+    serverTimeAtSync = null;
     state = loadGuestState();
     setAccountButton();
     render();
@@ -822,6 +1176,9 @@ async function handleAuthSubmit(event) {
 
 byId("close-quiz").addEventListener("click", closeQuiz);
 byId("quiz-submit").addEventListener("click", submitAnswer);
+byId("quiz-hire-teacher").addEventListener("click", () => hireTeacher("quiz"));
+byId("quiz-decline-teacher").addEventListener("click", () => declineTeacher("quiz"));
+byId("quiz-teacher-hint-button").addEventListener("click", () => requestTeacherHint("quiz"));
 byId("quiz-modal").addEventListener("click", (event) => { if (event.target === byId("quiz-modal")) closeQuiz(); });
 byId("open-bank-account").addEventListener("click", openBankAccount);
 byId("loan-form").addEventListener("submit", requestLoan);
@@ -831,6 +1188,9 @@ byId("loan-form").addEventListener("submit", requestLoan);
 byId("practice-interest").addEventListener("click", () => showFinanceQuestion("practice", null));
 byId("close-finance").addEventListener("click", closeFinanceQuestion);
 byId("finance-submit").addEventListener("click", submitFinanceAnswer);
+byId("finance-hire-teacher").addEventListener("click", () => hireTeacher("finance"));
+byId("finance-decline-teacher").addEventListener("click", () => declineTeacher("finance"));
+byId("finance-teacher-hint-button").addEventListener("click", () => requestTeacherHint("finance"));
 byId("finance-modal").addEventListener("click", (event) => {
   if (event.target === byId("finance-modal")) closeFinanceQuestion();
 });
@@ -866,24 +1226,26 @@ window.addEventListener("appinstalled", () => {
   showToast("Cidade em Construção foi instalada neste dispositivo.");
 });
 window.matchMedia("(display-mode: standalone)").addEventListener?.("change", updateInstallButton);
-byId("next-turn").addEventListener("click", () => {
-  state.day++;
-  let newMonth = false;
-  if (state.day > 30) { state.day = 1; state.month++; newMonth = true; }
-  if (state.month > 12) state.month = 1;
-  state.money += 12000;
-  state.materials += 10;
-  recordTransaction("Repasse diário da prefeitura", 12000);
-  const payrollPaid = payWeeklyPayroll();
-  const loanMessage = newMonth ? chargeMonthlyLoanInstallment() : null;
-  byId("next-turn").innerHTML = "<span>✓</span> Dia avançado";
-  window.setTimeout(() => { byId("next-turn").innerHTML = "<span>⏵</span> Avançar dia"; }, 1200);
-  const messages = [`Novo dia! A cidade recebeu ${formatBRL(12000)} e 10 materiais.`];
-  if (payrollPaid) messages.push(`Folha semanal paga: ${formatBRL(state.payroll.employeeCount * state.payroll.weeklySalaryCents)}.`);
-  if (loanMessage) messages.push(loanMessage);
-  showToast(messages.join(" "));
-  render();
+byId("clock-login-button").addEventListener("click", () => {
+  if (!cloudUser) {
+    showAuthModal();
+    return;
+  }
+  if (!cloudReady) {
+    activateUser(cloudUser).catch((error) => {
+      console.error("Não foi possível reconectar a cidade.", error);
+      showToast("Não foi possível reconectar ao Supabase. Tente novamente.");
+    });
+    return;
+  }
+  synchronizeServerClock();
 });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") synchronizeServerClock();
+});
+window.addEventListener("focus", synchronizeServerClock);
+window.setInterval(updateServerClockDisplay, 1000);
+window.setInterval(synchronizeServerClock, 60_000);
 byId("map-toggle").addEventListener("click", () => showToast("Visão geral da sua cidade."));
 byId("show-all").addEventListener("click", () => showToast("Mais construções serão desbloqueadas conforme sua cidade cresce."));
 byId("learn-more").addEventListener("click", () => {
@@ -892,13 +1254,19 @@ byId("learn-more").addEventListener("click", () => {
   byId("advisor-tip").textContent = tips[index];
 });
 byId("sound-toggle").addEventListener("click", (event) => {
-  const button = event.currentTarget;
-  button.classList.toggle("sound-off");
-  button.title = button.classList.contains("sound-off") ? "Sons desativados" : "Ativar ou desativar sons";
-  showToast(button.classList.contains("sound-off") ? "Sons desativados." : "Sons ativados.");
+  soundEnabled = !soundEnabled;
+  try {
+    localStorage.setItem("cidade-em-construcao-audio-v1", String(soundEnabled));
+  } catch (error) {
+    console.warn("Não foi possível salvar a preferência de áudio.", error);
+  }
+  updateSoundToggle();
+  if (soundEnabled) playAlertSound("correct");
+  showToast(soundEnabled ? "Sons ativados." : "Sons desativados.");
 });
 render();
 setAccountButton();
+updateSoundToggle();
 updateInstallButton();
 registerServiceWorker();
 initializeSupabase();
