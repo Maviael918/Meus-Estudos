@@ -74,6 +74,20 @@
           </article>
         </section>
 
+        <section class="payroll-card panel" aria-label="Folha semanal da prefeitura">
+          <div class="payroll-heading">
+            <div><p class="eyebrow">EQUIPE MUNICIPAL</p><h2>Funcionários da prefeitura</h2></div>
+            <span class="payroll-badge">PAGAMENTO SEMANAL</span>
+          </div>
+          <div class="payroll-grid">
+            <div><span>Funcionários</span><strong id="payroll-employee-count">3</strong></div>
+            <div><span>Salário por pessoa</span><strong id="payroll-weekly-wage">R$ 500,00</strong></div>
+            <div><span>Total da folha</span><strong id="payroll-weekly-total">R$ 1.500,00</strong></div>
+            <div><span>Próximo pagamento</span><strong id="payroll-next-payment">Em 7 dias</strong></div>
+          </div>
+          <p class="payroll-note">Os salários são descontados automaticamente a cada 7 dias de jogo. Se faltar saldo, o orçamento pode ficar negativo.</p>
+        </section>
+
         <section class="content-grid">
           <div class="city-panel panel">
             <div class="section-heading">
@@ -158,12 +172,12 @@
 
             <aside class="bank-side-column">
               <section class="bank-training-card">
-                <div class="training-icon">🧮</div>
-                <p class="eyebrow">BIBLIOTECA DE MATEMÁTICA FINANCEIRA</p>
-                <h3>Desafios que não se repetem</h3>
-                <p>Questões geradas com valores, taxas e prazos diferentes. Cada cidade guarda seu ponto na biblioteca para continuar de onde parou.</p>
-                <div class="library-counter"><span>Combinações exclusivas</span><strong id="library-counter">2.735.160</strong></div>
-                <button class="text-button training-button" id="practice-interest" type="button">Praticar juros simples ou compostos <span>→</span></button>
+                <div class="training-icon">📚</div>
+                <p class="eyebrow">BIBLIOTECA DE ESTUDOS</p>
+                <h3>Aprenda novos assuntos</h3>
+                <p>Desafios de Matemática, Português, Ciências, Geografia, História, Meio Ambiente e Cidadania, sem repetir questão antes de concluir a biblioteca.</p>
+                <div class="library-counter"><span>Desafios variados</span><strong id="library-counter">56</strong></div>
+                <button class="text-button training-button" id="practice-interest" type="button">Praticar assuntos variados <span>→</span></button>
                 <p class="bank-feedback" id="bank-feedback" aria-live="polite"></p>
               </section>
               <section class="bank-transactions panel">
@@ -240,6 +254,7 @@
     <script src="supabase-config.js"></script>
     <script src="supabase-client.js"></script>
     <script src="finance-question-bank.js"></script>
+    <script src="study-question-bank.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

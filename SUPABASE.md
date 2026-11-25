@@ -15,7 +15,7 @@ O jogo usa Supabase Auth com e-mail e senha e salva uma cidade por conta. Sem co
 
 ## Dados e segurança
 
-- `public.cities` guarda o nome, a versão do formato e o estado JSON da cidade de cada jogador. O orçamento em centavos de real, a conta municipal, o empréstimo e o cursor da biblioteca de desafios acompanham esse estado.
+- `public.cities` guarda o nome, a versão do formato e o estado JSON da cidade de cada jogador. O orçamento em centavos de real, a folha semanal, a conta municipal, o empréstimo e os cursores das bibliotecas de desafios acompanham esse estado.
 - Row Level Security (RLS) limita leitura e gravação ao usuário autenticado que possui a linha.
 - A chave pública é destinada ao cliente. A proteção dos dados depende das políticas RLS; não desative RLS nem exponha uma chave `service_role`.
 - O jogo salva alterações automaticamente após mudanças. Uma falha de sincronização é exibida no jogo e também no console do navegador.
@@ -24,7 +24,7 @@ O jogo usa Supabase Auth com e-mail e senha e salva uma cidade por conta. Sem co
 - A migração educacional cria matérias, desafios, alternativas, tentativas e conclusões. O gabarito fica em uma tabela sem acesso direto dos jogadores.
 - `get_study_challenges()` lista desafios e alternativas sem revelar o gabarito; `submit_study_answer(challenge_id, option_id)` valida a resposta no banco e concede pontos apenas na primeira resposta correta; `get_my_study_progress()` retorna o progresso por matéria.
 - Essas funções RPC estão preparadas no banco. A tela atual ainda apresenta os desafios definidos em `app.js`; ela precisa ser adaptada para buscar e responder usando as RPCs antes de os pontos de estudo passarem a ser registrados nelas.
-- O Banco Central da Cidade e os desafios financeiros atuais são simulados pelo jogo e gravados no estado da cidade; não representam dinheiro nem serviços financeiros reais. Para as regras, taxas e biblioteca sem repetição, consulte [FINANCAS.md](./FINANCAS.md).
+- O Banco Central da Cidade e os desafios são simulados pelo jogo e gravados no estado da cidade; não representam dinheiro nem serviços financeiros reais. A cidade sincroniza separadamente o avanço da biblioteca de sete assuntos e o dos desafios financeiros. Para as regras e conteúdos, consulte [FINANCAS.md](./FINANCAS.md).
 
 Para produção, configure também a URL de redirecionamento e os provedores de autenticação em **Authentication → URL Configuration** no painel do Supabase.
 

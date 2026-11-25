@@ -3,18 +3,25 @@
 ## Regras da simulação
 
 - Todos os valores do jogo são em reais (R$), armazenados como centavos inteiros.
+- A prefeitura começa com 3 funcionários, cada um recebe R$ 500,00 a cada 7 dias de jogo. A folha semanal total é de R$ 1.500,00 e é debitada automaticamente do orçamento.
+- O saldo pode ficar negativo após o pagamento da folha; construções continuam bloqueadas enquanto o orçamento não cobrir seus custos.
+- A contagem para o próximo pagamento e o número de folhas pagas são persistidos por cidade para evitar reiniciar o calendário ao recarregar ou sincronizar.
 - A conta municipal é gratuita e usa o mesmo saldo do orçamento apresentado no painel da cidade.
 - A cidade pode ter apenas um empréstimo ativo por vez, nos valores de R$ 1.000,00, R$ 5.000,00 ou R$ 10.000,00.
 - Empréstimos de juros simples cobram 2% ao mês; empréstimos de juros compostos cobram 1,5% ao mês. O jogador escolhe 6 ou 12 parcelas.
 - Antes da liberação, o jogador resolve um desafio do mesmo tipo de juros. O valor calculado no desafio é um exemplo de estudo; o contrato mostra separadamente o total e as parcelas do produto selecionado.
 - Uma parcela é cobrada ao avançar para o mês seguinte no jogo (a cada 30 dias simulados). Se faltar saldo, ela fica pendente e o jogo tenta novamente no próximo mês, sem multa nesta versão educativa.
-- O saldo, a conta, o contrato e o avanço da biblioteca são guardados no progresso local e, quando há sessão, sincronizados no estado da cidade no Supabase.
+- O saldo, a conta, o contrato e os avanços das bibliotecas de estudo são guardados no progresso local e, quando há sessão, sincronizados no estado da cidade no Supabase.
 
-## Biblioteca de desafios exclusivos
+## Desafios de vários assuntos
 
-[`finance-question-bank.js`](./finance-question-bank.js) é uma biblioteca independente do código principal. Ela combina dois regimes de juros, três objetivos de cálculo, 991 capitais, 46 taxas mensais e 10 prazos: **2.735.160 questões possíveis**.
+Os desafios para construir, expandir a cidade e praticar alternam entre **Matemática, Português, Ciências, Geografia, História, Meio Ambiente e Cidadania**. A biblioteca [`study-question-bank.js`](./study-question-bank.js) contém 56 questões revisadas, oito por assunto. Cada bloco de sete desafios apresenta um de cada assunto; as perguntas são embaralhadas por cidade e não se repetem até a biblioteca ser concluída.
 
-Cada progresso guarda uma semente e um cursor. O gerador percorre as combinações por uma permutação determinística completa, sem guardar uma lista crescente de perguntas e sem emitir novamente a mesma questão nessa cidade. Ao chegar ao final do catálogo, ele informa que os desafios exclusivos se esgotaram em vez de repetir questões.
+O progresso guarda cursores independentes para essa biblioteca variada e para os exercícios de juros. Assim, responder a um desafio de empréstimo não força as próximas atividades a continuarem apenas em matemática financeira. Ao concluir as 56 questões variadas, o jogo avisa que a biblioteca foi concluída em vez de repetir perguntas.
+
+## Exercícios de matemática financeira
+
+[`finance-question-bank.js`](./finance-question-bank.js) gera desafios de juros para a etapa de empréstimo. Ele combina dois regimes de juros, três objetivos de cálculo, 991 capitais, 46 taxas mensais e 10 prazos: **2.735.160 questões possíveis**. Cada cidade guarda a posição nessa sequência. Os exercícios do empréstimo continuam focados em juros porque esse conhecimento é necessário para entender o contrato.
 
 As fórmulas usadas são:
 

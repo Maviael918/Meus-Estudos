@@ -1,10 +1,11 @@
-const CACHE_NAME = "cidade-em-construcao-v4";
+const CACHE_NAME = "cidade-em-construcao-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./finance-question-bank.js",
+  "./study-question-bank.js",
   "./supabase-config.js",
   "./supabase-client.js",
   "./manifest.webmanifest",
