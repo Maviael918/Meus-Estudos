@@ -669,6 +669,7 @@ function showCityQuiz(question, icon, title, intro, type) {
   byId("quiz-question").textContent = question.question;
   byId("quiz-feedback").textContent = "";
   byId("quiz-feedback").className = "quiz-feedback";
+  byId("quiz-answer-key").classList.add("hidden");
   byId("quiz-submit").disabled = true;
   const options = byId("quiz-options");
   options.replaceChildren();
@@ -682,6 +683,7 @@ function showCityQuiz(question, icon, title, intro, type) {
       options.querySelectorAll(".quiz-option").forEach((item, i) => item.classList.toggle("selected", i === index));
       byId("quiz-submit").disabled = false;
       byId("quiz-feedback").textContent = "";
+      byId("quiz-answer-key").classList.add("hidden");
     });
     options.append(button);
   });
@@ -751,6 +753,7 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
     byId("finance-question").textContent = question.question;
     byId("finance-feedback").textContent = "";
     byId("finance-feedback").className = "quiz-feedback";
+    byId("finance-answer-key").classList.add("hidden");
     byId("finance-submit").disabled = true;
     const options = byId("finance-options");
     options.replaceChildren();
@@ -766,6 +769,7 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
         });
         byId("finance-submit").disabled = false;
         byId("finance-feedback").textContent = "";
+        byId("finance-answer-key").classList.add("hidden");
       });
       options.append(button);
     });
@@ -849,6 +853,7 @@ function registerWrongAnswer(modal, feedback) {
   playAlertSound("wrong");
   feedback.textContent = `Resposta incorreta: foram descontados R$ 300,00. Erros seguidos: ${state.education.consecutiveMistakes}. Tente novamente.`;
   feedback.className = "quiz-feedback";
+  byId(`${modal}-answer-key`).classList.remove("hidden");
   selectedAnswer = null;
   byId(`${modal}-submit`).disabled = true;
   updateEconomyDisplays();
@@ -857,6 +862,19 @@ function registerWrongAnswer(modal, feedback) {
     window.setTimeout(() => playAlertSound("teacher"), 350);
   }
   save();
+}
+
+function revealAnswer(modal) {
+  const question = modal === "quiz" ? activeQuiz : activeFinanceQuestion?.question;
+  const answerIndex = modal === "quiz" ? activeQuiz?.answer : question?.correctIndex;
+  if (!question || !Number.isInteger(answerIndex) || typeof question.options[answerIndex] !== "string") {
+    showToast("Não foi possível carregar o gabarito deste desafio.");
+    return;
+  }
+  const explanation = modal === "quiz" ? activeQuiz.explain : question.explanation;
+  byId(`${modal}-feedback`).textContent = `Gabarito: ${String.fromCharCode(65 + answerIndex)}. ${question.options[answerIndex]} ${explanation}`;
+  byId(`${modal}-feedback`).className = "quiz-feedback correct";
+  byId(`${modal}-answer-key`).classList.add("hidden");
 }
 
 function grantQuestionReward() {
@@ -1339,6 +1357,7 @@ async function handleAuthSubmit(event) {
 
 byId("close-quiz").addEventListener("click", closeQuiz);
 byId("quiz-submit").addEventListener("click", submitAnswer);
+byId("quiz-answer-key").addEventListener("click", () => revealAnswer("quiz"));
 byId("quiz-hire-teacher").addEventListener("click", () => hireTeacher("quiz"));
 byId("quiz-decline-teacher").addEventListener("click", () => declineTeacher("quiz"));
 byId("quiz-teacher-hint-button").addEventListener("click", () => requestTeacherHint("quiz"));
@@ -1368,6 +1387,7 @@ byId("buy-building-materials").addEventListener("click", () => {
 });
 byId("close-finance").addEventListener("click", closeFinanceQuestion);
 byId("finance-submit").addEventListener("click", submitFinanceAnswer);
+byId("finance-answer-key").addEventListener("click", () => revealAnswer("finance"));
 byId("finance-hire-teacher").addEventListener("click", () => hireTeacher("finance"));
 byId("finance-decline-teacher").addEventListener("click", () => declineTeacher("finance"));
 byId("finance-teacher-hint-button").addEventListener("click", () => requestTeacherHint("finance"));

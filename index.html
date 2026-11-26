@@ -70,7 +70,7 @@
             <div class="stat-icon people">♟</div><div class="stat-info"><span>POPULAÇÃO</span><strong id="population-value">24</strong><em>+4 este mês</em></div><span class="stat-more">•••</span>
           </article>
           <article class="stat-card">
-            <div class="stat-icon materials">▧</div><div class="stat-info"><span>INSUMOS PARA OBRAS</span><strong id="materials-value">120</strong><em>Unidades de madeira, tijolos e outros itens</em></div><span class="stat-more">•••</span>
+            <div class="stat-icon materials">▧</div><div class="stat-info"><span>MATERIAIS DE CONSTRUÇÃO</span><strong id="materials-value">120</strong><em>Unidades de madeira, tijolos e outros itens</em><button class="materials-purchase-button" id="buy-building-materials" type="button" title="Requer 10 acertos sem erros no dia">🧱 Comprar 20 · R$ 100,00</button><small class="materials-purchase-note">Libera após 10 acertos sem erros hoje.</small></div><span class="stat-more">•••</span>
           </article>
           <article class="stat-card">
             <div class="stat-icon happiness">♡</div><div class="stat-info"><span>FELICIDADE</span><strong id="happiness-value">72<small>%</small></strong><em>↑ Muito bem!</em></div><span class="stat-more">•••</span>
@@ -224,7 +224,7 @@
         <section class="build-section" id="construir">
           <div class="section-heading build-heading">
             <div><p class="eyebrow">DÊ O PRÓXIMO PASSO</p><h2>O que vamos construir?</h2></div>
-            <div class="build-tools"><button class="subtle-button" id="buy-building-materials" type="button">🧱 Comprar 20 unidades · R$ 100,00</button><button class="text-button" id="show-all">Ver todas as construções <span>→</span></button></div>
+            <div class="build-tools"><button class="text-button" id="show-all">Ver todas as construções <span>→</span></button></div>
           </div>
           <div class="build-list" id="build-list"></div>
         </section>
@@ -241,6 +241,7 @@
         <p class="quiz-intro" id="quiz-intro">Resolva o desafio para liberar esta construção.</p>
         <div class="question-box"><p id="quiz-question"></p><div id="quiz-options" class="quiz-options"></div></div>
         <p class="quiz-feedback" id="quiz-feedback" aria-live="polite"></p>
+        <button class="text-button answer-key-button hidden" id="quiz-answer-key" type="button">Ver gabarito e explicação</button>
         <button class="text-button teacher-hint-button hidden" id="quiz-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
         <p class="teacher-hint hidden" id="quiz-teacher-hint" aria-live="polite"></p>
         <section class="teacher-offer hidden" id="quiz-teacher-offer">
@@ -309,6 +310,7 @@
         <p class="quiz-intro" id="finance-intro">Resolva o cálculo para avançar.</p>
         <div class="question-box"><p id="finance-question"></p><div id="finance-options" class="quiz-options"></div></div>
         <p class="quiz-feedback" id="finance-feedback" aria-live="polite"></p>
+        <button class="text-button answer-key-button hidden" id="finance-answer-key" type="button">Ver gabarito e explicação</button>
         <button class="text-button teacher-hint-button hidden" id="finance-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
         <p class="teacher-hint hidden" id="finance-teacher-hint" aria-live="polite"></p>
         <section class="teacher-offer hidden" id="finance-teacher-offer">
