@@ -1612,7 +1612,28 @@ document.addEventListener("keydown", (event) => {
 document.querySelectorAll(".nav-link").forEach((link) => {
   link.addEventListener("click", () => {
     document.querySelectorAll(".nav-link").forEach((item) => item.classList.toggle("active", item === link));
+    const centralView = link.hash === "#central";
+    const mainContent = document.querySelector(".main-content");
+    mainContent.classList.toggle("central-view", centralView);
+    mainContent.classList.remove("study-view");
+    document.querySelector(".app-shell").classList.toggle("launcher-mode", centralView);
+    const centralLink = document.querySelector('.nav-link[href="#central"]');
+    centralLink.lastChild.textContent = centralView ? " Central" : " ← Voltar à Central";
+    document.querySelector(".breadcrumb").firstChild.textContent = "Painel da prefeitura ";
+    const label = link.textContent.replace(link.querySelector("span")?.textContent || "", "").trim();
+    document.querySelector(".breadcrumb strong").textContent = label;
   });
+});
+byId("open-my-studies").addEventListener("click", () => {
+  const mainContent = document.querySelector(".main-content");
+  mainContent.classList.remove("central-view");
+  mainContent.classList.remove("study-view");
+  document.querySelector(".app-shell").classList.remove("launcher-mode");
+  document.querySelectorAll(".nav-link").forEach((item) => item.classList.toggle("active", item.hash === "#cidade"));
+  document.querySelector('.nav-link[href="#central"]').lastChild.textContent = " ← Voltar à Central";
+  document.querySelector(".breadcrumb").firstChild.textContent = "Painel da prefeitura ";
+  document.querySelector(".breadcrumb strong").textContent = "Minha cidade";
+  window.location.hash = "cidade";
 });
 byId("account-button").addEventListener("click", handleAccountClick);
 byId("close-auth").addEventListener("click", closeAuthModal);

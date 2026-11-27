@@ -16,17 +16,18 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <div class="app-shell">
+    <div class="app-shell launcher-mode">
       <aside class="sidebar">
         <a class="brand" href="#" aria-label="Cidade em Construção, início">
           <span class="brand-icon">🏙️</span>
           <span><strong>cidade em</strong><br><b>construção</b></span>
         </a>
-        <div class="side-label">PREFEITURA</div>
+        <div class="side-label">SISTEMAS</div>
         <nav class="main-nav" aria-label="Navegação principal">
-          <a class="nav-link active" href="#cidade"><span>▦</span> Minha cidade</a>
+          <a class="nav-link active" href="#central"><span>▦</span> Central</a>
+          <a class="nav-link" href="#cidade"><span>▦</span> Minha cidade</a>
           <a class="nav-link" href="#construir"><span>⌂</span> Construir</a>
-          <a class="nav-link" href="#estudos"><span>📚</span> Estudar</a>
+          <a class="nav-link" href="#estudos"><span>📚</span> Estudos</a>
           <a class="nav-link" href="#banco"><span>🏦</span> Banco</a>
           <a class="nav-link" href="#relatorio"><span>▤</span> Relatórios</a>
         </nav>
@@ -160,9 +161,22 @@
           </aside>
         </section>
 
-        <section class="study-hub" id="estudos">
+        <section class="systems-center" id="central" aria-labelledby="central-title">
+          <div class="section-heading systems-center-heading">
+            <div><p class="eyebrow">SEUS SISTEMAS EM UM SÓ LUGAR</p><h2 id="central-title">Central de Sistemas</h2></div>
+          </div>
+          <div class="systems-grid">
+            <button class="system-launcher" id="open-my-studies" type="button">
+              <span class="system-launcher-icon" aria-hidden="true">📚</span>
+              <span class="system-launcher-label">Meus Estudos</span>
+              <span class="system-launcher-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="study-hub" id="estudos" aria-labelledby="my-studies-title">
           <div class="section-heading study-hub-heading">
-            <div><p class="eyebrow">APRENDA E FAÇA SUA CIDADE CRESCER</p><h2>Estudos para concursos <span aria-hidden="true">📚</span></h2></div>
+            <div><p class="eyebrow">SISTEMA DE ESTUDOS</p><h2 id="my-studies-title">Meus Estudos <span aria-hidden="true">📚</span></h2></div>
             <span class="bank-educational-badge">QUESTÕES AUTORAIS</span>
           </div>
           <div class="study-hub-card panel">
