@@ -1,4 +1,4 @@
-const CACHE_NAME = "cidade-em-construcao-v11";
+const CACHE_NAME = "cidade-em-construcao-v16";
 const APP_SHELL = [
   "./",
   "./index.html",

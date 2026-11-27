@@ -3,7 +3,8 @@ const buildings = [
   { id: "loja", name: "Mercadinho", icon: "🏪", type: "Comércio", description: "Produtos e serviços por perto.", cost: 50000, material: 20, effect: "services" },
   { id: "escola", name: "Escola", icon: "🏫", type: "Educação", description: "Conhecimento para todos.", cost: 70000, material: 30, effect: "knowledge" },
   { id: "parque", name: "Parque", icon: "🌳", type: "Lazer", description: "Mais verde e diversão.", cost: 45000, material: 25, effect: "happiness" },
-  { id: "fabrica", name: "Fábrica", icon: "🏭", type: "Indústria", description: "Empregos e produção local.", cost: 90000, material: 45, effect: "money" }
+  { id: "fabrica", name: "Fábrica", icon: "🏭", type: "Indústria", description: "Empregos e produção local.", cost: 90000, material: 45, effect: "money" },
+  { id: "biblioteca", name: "Biblioteca Comunitária", icon: "📚", type: "Educação", description: "Um espaço de leitura e aprendizagem para toda a cidade.", cost: 80000, material: 25, specialMaterial: "educationKits", specialAmount: 1, studyProject: true, effect: "knowledge" }
 ];
 
 function createStudySeed() {
@@ -26,7 +27,7 @@ const initialState = {
   built: [{ id: "prefeitura", name: "Prefeitura", icon: "🏛️", type: "cityhall", cell: 7 }],
   day: 18, month: 3, completedMissions: 0, expanded: false,
   bank: { accountNumber: null, openedAt: null, loan: null, transactions: [] },
-  payroll: { employeeCount: 3, weeklySalaryCents: 50000, teacherCount: 0, teacherWeeklySalaryCents: 80000, daysUntilPayment: 7, paymentsMade: 0 },
+  payroll: { employeeCount: 3, weeklySalaryCents: 50000, teacherCount: 0, teacherWeeklySalaryCents: 0, teacherDailySalaryCents: 11429, teacherSubject: "MATEMÁTICA", daysUntilPayment: 7, paymentsMade: 0 },
   simulation: {
     questionRewardCents: 10000, waterBillCents: 12000, energyBillCents: 18000, propertyTaxCents: 7500,
     waterResidentsPerPoint: 12, energyResidentsPerPoint: 8,
@@ -34,7 +35,7 @@ const initialState = {
   },
   education: { consecutiveMistakes: 0 },
   disasters: { daysUntilEvent: 7 + Math.floor(Math.random() * 8), eventsTriggered: 0 },
-  study: { challengeCursor: 0, financeCursor: 0, adminCursor: 0, dailyDate: "", dailyCorrect: 0, dailyPerfect: true, seed: createStudySeed() }
+  study: { challengeCursor: 0, financeCursor: 0, adminCursor: 0, lessonStreak: 0, educationKits: 0, educationProjectUnlocked: false, seed: createStudySeed() }
 };
 const saveKey = "cidade-em-construcao-v1";
 const buildingById = new Map(buildings.map((building) => [building.id, building]));
@@ -120,9 +121,9 @@ function normalizeState(candidate) {
   const financeCursor = Number.isSafeInteger(financeCursorValue) && financeCursorValue >= 0
     ? financeCursorValue : 0;
   const adminCursor = Number.isSafeInteger(study.adminCursor) && study.adminCursor >= 0 ? study.adminCursor : 0;
-  const dailyCorrect = Number.isSafeInteger(study.dailyCorrect) && study.dailyCorrect >= 0 ? study.dailyCorrect : 0;
-  const dailyDate = typeof study.dailyDate === "string" ? study.dailyDate : "";
-  const dailyPerfect = typeof study.dailyPerfect === "boolean" ? study.dailyPerfect : true;
+  const lessonStreak = Number.isSafeInteger(study.lessonStreak) && study.lessonStreak >= 0 && study.lessonStreak < 3 ? study.lessonStreak : 0;
+  const educationKits = Number.isSafeInteger(study.educationKits) && study.educationKits >= 0 ? study.educationKits : 0;
+  const educationProjectUnlocked = study.educationProjectUnlocked === true || educationKits > 0;
   const seed = Number.isInteger(study.seed) && study.seed >= 0
     ? study.seed >>> 0 : initialState.study.seed;
   const savedPayroll = candidate.payroll && typeof candidate.payroll === "object" ? candidate.payroll : {};
@@ -133,8 +134,12 @@ function normalizeState(candidate) {
       ? savedPayroll.weeklySalaryCents : initialState.payroll.weeklySalaryCents,
     teacherCount: Number.isSafeInteger(savedPayroll.teacherCount) && savedPayroll.teacherCount >= 0
       ? savedPayroll.teacherCount : 0,
-    teacherWeeklySalaryCents: Number.isSafeInteger(savedPayroll.teacherWeeklySalaryCents) && savedPayroll.teacherWeeklySalaryCents >= 0
-      ? savedPayroll.teacherWeeklySalaryCents : initialState.payroll.teacherWeeklySalaryCents,
+    teacherWeeklySalaryCents: 0,
+    teacherDailySalaryCents: Number.isSafeInteger(savedPayroll.teacherDailySalaryCents)
+      && savedPayroll.teacherDailySalaryCents >= 0 && savedPayroll.teacherDailySalaryCents <= 100000000
+      ? savedPayroll.teacherDailySalaryCents : initialState.payroll.teacherDailySalaryCents,
+    teacherSubject: typeof savedPayroll.teacherSubject === "string" && savedPayroll.teacherSubject.trim()
+      ? savedPayroll.teacherSubject.trim().toLocaleUpperCase("pt-BR").slice(0, 80) : initialState.payroll.teacherSubject,
     daysUntilPayment: Number.isSafeInteger(savedPayroll.daysUntilPayment) && savedPayroll.daysUntilPayment >= 1 && savedPayroll.daysUntilPayment <= 7
       ? savedPayroll.daysUntilPayment : initialState.payroll.daysUntilPayment,
     paymentsMade: Number.isSafeInteger(savedPayroll.paymentsMade) && savedPayroll.paymentsMade >= 0
@@ -199,7 +204,7 @@ function normalizeState(candidate) {
     simulation,
     education,
     disasters,
-    study: { challengeCursor, financeCursor, adminCursor, dailyDate, dailyCorrect, dailyPerfect, seed }
+    study: { challengeCursor, financeCursor, adminCursor, lessonStreak, educationKits, educationProjectUnlocked, seed }
   };
 }
 function loadGuestState() {
@@ -337,6 +342,7 @@ function renderMap() {
     tile.type = "button";
     tile.className = `city-tile ${building ? (building.type === "cityhall" ? "cityhall" : "") : cell >= 15 && !state.expanded ? "locked" : "available"}`;
     if (building) {
+      tile.dataset.buildingId = building.id;
       tile.setAttribute("aria-label", building.name);
       tile.innerHTML = `<span class="tile-icon">${building.icon}</span><span class="tile-name">${building.name}</span>`;
     } else if (cell >= 15 && !state.expanded) {
@@ -361,18 +367,60 @@ function renderBuildings() {
   list.replaceChildren();
   buildings.forEach((building) => {
     const card = document.createElement("article");
-    card.className = "build-card";
-    const canAfford = state.money >= building.cost && state.materials >= building.material;
+    const projectLocked = building.studyProject && !state.study.educationProjectUnlocked;
+    const canAfford = state.money >= building.cost && state.materials >= building.material
+      && (!building.specialMaterial || state.study[building.specialMaterial] >= building.specialAmount);
     const shortage = [
       state.money < building.cost ? `faltam ${formatBRL(building.cost - state.money)}` : "",
-      state.materials < building.material ? `faltam ${building.material - state.materials} materiais de construção` : ""
+      state.materials < building.material ? `faltam ${building.material - state.materials} materiais de constru\u00e7\u00e3o` : "",
+      building.specialMaterial && state.study[building.specialMaterial] < building.specialAmount
+        ? `falta ${building.specialAmount - state.study[building.specialMaterial]} kit(s) de estudo` : ""
     ].filter(Boolean).join(" e ");
-    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${building.description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> · ${building.material} unidades de insumos${shortage ? `<br><small>${shortage}</small>` : ""}</span><button class="build-action">${canAfford ? "Construir" : "Ver falta"}</button></div>`;
-    card.querySelector("button").addEventListener("click", () => startQuiz(building));
+    card.className = `build-card${projectLocked ? " build-card-locked" : ""}`;
+    const kitLabel = building.specialAmount === 1 ? "kit de estudo" : "kits de estudo";
+    const resourceLine = building.specialMaterial ? `<br><small>+ ${building.specialAmount} ${kitLabel}</small>` : "";
+    const actionLabel = projectLocked ? "Estude para desbloquear" : canAfford ? "Construir" : "Ver falta";
+    const description = projectLocked
+      ? "Desbloqueie ap\u00f3s 3 acertos acumulados em Estudar."
+      : building.description;
+    card.innerHTML = `<div class="build-card-head"><span class="build-icon">${building.icon}</span><span class="build-type">${building.type}</span></div><h3>${building.name}</h3><p>${description}</p><div class="build-meta"><span class="cost"><b>${formatBRL(building.cost)}</b> \u00b7 ${building.material} unidades de insumos${resourceLine}${shortage && !projectLocked ? `<br><small>${shortage}</small>` : ""}</span><button class="build-action">${actionLabel}</button></div>`;
+    card.querySelector("button").addEventListener("click", () => {
+      if (projectLocked) {
+        byId("estudos").scrollIntoView({ behavior: "smooth", block: "center" });
+        showToast("Acerte 3 quest\u00f5es acumuladas em Estudar para desbloquear a Biblioteca Comunit\u00e1ria.");
+        return;
+      }
+      startQuiz(building);
+    });
     list.append(card);
   });
 }
 
+function updateStudyRewardDisplay() {
+  const progress = byId("study-reward-progress");
+  if (!progress) return;
+  for (let step = 1; step <= 3; step++) {
+    byId(`study-step-${step}`)?.classList.toggle("is-complete", step <= state.study.lessonStreak);
+    const check = document.querySelectorAll(".study-streak-check")[step - 1];
+    check?.classList.toggle("is-complete", step <= state.study.lessonStreak);
+  }
+  progress.textContent = state.study.educationProjectUnlocked
+    ? `Um kit novo a cada 3 acertos acumulados \u00b7 Progresso para o pr\u00f3ximo kit: ${state.study.lessonStreak}/3 \u00b7 Kits: ${state.study.educationKits}`
+    : `Acerte 3 quest\u00f5es acumuladas para desbloquear a Biblioteca Comunit\u00e1ria \u00b7 Progresso: ${state.study.lessonStreak}/3`;
+}
+
+function animateUiElement(element, keyframes, duration = 500) {
+  if (!element || !element.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  element.animate(keyframes, { duration, easing: "cubic-bezier(.2,.8,.2,1)" });
+}
+
+function celebrateStudyKit() {
+  animateUiElement(byId("study-kit-badge"), [
+    { transform: "scale(1)" },
+    { transform: "scale(1.3)", offset: 0.55 },
+    { transform: "scale(1)" }
+  ], 600);
+}
 function recordTransaction(label, amountCents) {
   if (!state.bank.accountNumber) return;
   state.bank.transactions.unshift({
@@ -428,8 +476,56 @@ function renderBank() {
 }
 
 function updateLibraryCounter() {
-  const remaining = Math.max(0, window.pernambucoQuestionBank.poolSize - state.study.adminCursor);
-  byId("library-counter").textContent = `${formatNumber(remaining)} restantes`;
+  byId("library-counter").textContent = `${formatNumber(window.pernambucoQuestionBank.poolSize)} questões`;
+  updateSelectedQuestionCount();
+}
+
+function updateSelectedQuestionCount() {
+  const filter = byId("study-subject-filter").value;
+  const count = filter
+    ? window.pernambucoQuestionBank.questions.filter((question) => question.subject.toLocaleUpperCase("pt-BR") === filter).length
+    : window.pernambucoQuestionBank.poolSize;
+  byId("study-question-count").textContent = `${formatNumber(count)} ${count === 1 ? "questão autoral" : "questões autorais"}`;
+}
+
+function populateStudySubjects() {
+  const select = byId("study-subject-filter");
+  const subjects = [...new Set(window.pernambucoQuestionBank.questions
+    .map((question) => question.subject.toLocaleUpperCase("pt-BR")))]
+    .sort((first, second) => first.localeCompare(second, "pt-BR"));
+  select.replaceChildren();
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "Todas as matérias";
+  select.append(allOption);
+  for (const subject of subjects) {
+    const option = document.createElement("option");
+    option.value = subject;
+    option.textContent = subject;
+    select.append(option);
+  }
+  updateLibraryCounter();
+}
+
+function populateTeacherSubjects() {
+  const coreSubjects = ["MATEMÁTICA", "PORTUGUÊS", "CIÊNCIAS", "GEOGRAFIA", "HISTÓRIA", "MEIO AMBIENTE", "CIDADANIA", "MATEMÁTICA FINANCEIRA"];
+  const adminSubjects = window.pernambucoQuestionBank.questions.map((question) => question.subject);
+  const subjects = [...new Set([...coreSubjects, ...adminSubjects].map((subject) => subject.toLocaleUpperCase("pt-BR")))]
+    .sort((first, second) => first.localeCompare(second, "pt-BR"));
+  for (const prefix of ["quiz", "finance"]) {
+    const select = byId(`${prefix}-teacher-subject`);
+    select.replaceChildren();
+    for (const subject of subjects) {
+      const option = document.createElement("option");
+      option.value = subject;
+      option.textContent = subject;
+      select.append(option);
+    }
+  }
+}
+
+function startAdminPractice() {
+  showFinanceQuestion("practice-admin", null, null, byId("study-subject-filter").value);
 }
 
 function updateLoanPreview() {
@@ -445,7 +541,9 @@ function updateLoanPreview() {
 function render() {
   updateServerClockDisplay();
   byId("simulation-settings").disabled = !cloudReady;
-  byId("practice-interest").disabled = !cloudReady;
+  byId("study-access-note").textContent = cloudReady
+    ? "Seu progresso e as recompensas são salvos na cidade."
+    : "Entre na sua conta para responder, salvar o progresso e receber recompensas.";
   byId("open-bank-account").disabled = !cloudReady || Boolean(state.bank.accountNumber);
   byId("loan-amount").disabled = !cloudReady;
   byId("loan-method").disabled = !cloudReady;
@@ -456,6 +554,7 @@ function render() {
   updateSimulationDisplay();
   byId("population-value").textContent = formatNumber(state.population);
   byId("materials-value").textContent = formatNumber(state.materials);
+  updateStudyRewardDisplay();
   byId("happiness-value").innerHTML = `${state.happiness}<small>%</small>`;
   byId("homes-count").textContent = state.built.filter((item) => item.effect === "homes").length;
   byId("services-count").textContent = state.built.filter((item) => item.effect === "services").length;
@@ -524,6 +623,7 @@ function openSimulationSettings() {
   byId("property-tax-setting").value = state.simulation.propertyTaxCents / 100;
   byId("water-consumption-setting").value = state.simulation.waterResidentsPerPoint;
   byId("energy-consumption-setting").value = state.simulation.energyResidentsPerPoint;
+  byId("teacher-daily-salary-setting").value = (state.payroll.teacherDailySalaryCents / 100).toFixed(2);
   byId("simulation-settings-feedback").textContent = "";
   byId("simulation-settings-feedback").className = "auth-feedback";
   byId("simulation-settings-modal").classList.remove("hidden");
@@ -554,25 +654,33 @@ function saveSimulationSettings(event) {
   }
   const waterResidentsPerPoint = byId("water-consumption-setting").valueAsNumber;
   const energyResidentsPerPoint = byId("energy-consumption-setting").valueAsNumber;
+  const teacherDailySalary = byId("teacher-daily-salary-setting").valueAsNumber;
   if (![waterResidentsPerPoint, energyResidentsPerPoint].every((value) => Number.isInteger(value) && value >= 1 && value <= 1000)) {
     byId("simulation-settings-feedback").textContent = "O consumo deve ficar entre 1 e 1.000 moradores por ponto de reserva.";
+    return;
+  }
+  if (!Number.isFinite(teacherDailySalary) || teacherDailySalary < 0 || teacherDailySalary > 1000000) {
+    byId("simulation-settings-feedback").textContent = "Informe um sal\u00e1rio di\u00e1rio entre R$ 0,00 e R$ 1.000.000,00.";
     return;
   }
   for (const { key, cents } of values) state.simulation[key] = cents;
   state.simulation.waterResidentsPerPoint = waterResidentsPerPoint;
   state.simulation.energyResidentsPerPoint = energyResidentsPerPoint;
+  state.payroll.teacherDailySalaryCents = Math.round(teacherDailySalary * 100);
   save();
   updateSimulationDisplay();
+  updatePayrollDisplay();
   closeSimulationSettings();
-  showToast("Configurações salvas. As contas atualizadas vencem no próximo dia 1.");
+  showToast("Configurações salvas. O salário da professora vale nos próximos dias processados.");
 }
 
 function updatePayrollDisplay() {
-  const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents
-    + state.payroll.teacherCount * state.payroll.teacherWeeklySalaryCents;
+  const total = state.payroll.employeeCount * state.payroll.weeklySalaryCents;
   byId("payroll-employee-count").textContent = formatNumber(state.payroll.employeeCount);
   byId("payroll-weekly-wage").textContent = formatBRL(state.payroll.weeklySalaryCents);
   byId("payroll-teacher-count").textContent = formatNumber(state.payroll.teacherCount);
+  byId("payroll-teacher-subject").textContent = state.payroll.teacherCount > 0 ? state.payroll.teacherSubject : "N\u00e3o contratada";
+  byId("payroll-teacher-daily-salary").textContent = formatBRL(state.payroll.teacherDailySalaryCents);
   byId("payroll-weekly-total").textContent = formatBRL(total);
   byId("payroll-next-payment").textContent = state.payroll.daysUntilPayment === 1
     ? "Amanhã"
@@ -634,10 +742,17 @@ function playAlertSound(type) {
 
 function startQuiz(building) {
   if (!requireLiveCity()) return;
-  if (state.money < building.cost || state.materials < building.material) {
+  if (building.studyProject && !state.study.educationProjectUnlocked) {
+    showToast("Acerte 3 questões acumuladas em Estudar para desbloquear a Biblioteca Comunitária.");
+    return;
+  }
+  if (state.money < building.cost || state.materials < building.material
+    || (building.specialMaterial && state.study[building.specialMaterial] < building.specialAmount)) {
     const missingMoney = Math.max(0, building.cost - state.money);
     const missingMaterials = Math.max(0, building.material - state.materials);
-    const details = [missingMoney ? `faltam ${formatBRL(missingMoney)} no orçamento` : "", missingMaterials ? `faltam ${missingMaterials} materiais de construção` : ""].filter(Boolean).join(" e ");
+    const missingSpecial = building.specialMaterial
+      ? Math.max(0, building.specialAmount - state.study[building.specialMaterial]) : 0;
+    const details = [missingMoney ? `faltam ${formatBRL(missingMoney)} no orçamento` : "", missingMaterials ? `faltam ${missingMaterials} materiais de construção` : "", missingSpecial ? `falta ${missingSpecial} kit(s) de estudo` : ""].filter(Boolean).join(" e ");
     showToast(`Não é possível construir ${building.name}: ${details}.`);
     return;
   }
@@ -659,7 +774,7 @@ function showCityQuiz(question, icon, title, intro, type) {
   activeQuiz.type = type;
   activeQuiz.hintUsed = false;
   byId("quiz-teacher-hint-button").disabled = false;
-  byId("quiz-teacher-hint-button").textContent = "💡 Pedir dica à professora";
+  byId("quiz-teacher-hint-button").textContent = "🧑‍🏫 Pedir dica da professora";
   byId("quiz-teacher-hint").classList.add("hidden");
   updateTeacherSupport();
   byId("quiz-subject").textContent = question.subject;
@@ -716,7 +831,7 @@ function closeQuiz() {
   byId("quiz-teacher-hint").classList.add("hidden");
 }
 
-function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
+function showFinanceQuestion(purpose, preferredMethod, loanOffer = null, subjectFilter = "") {
   if (!requireLiveCity()) return;
   try {
     const isLoan = purpose === "loan";
@@ -724,7 +839,7 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
     const question = isLoan
       ? window.financeQuestionBank.nextQuestion(state.study.financeCursor, state.study.seed, preferredMethod)
       : isAdminPractice
-        ? window.pernambucoQuestionBank.nextQuestion(state.study.adminCursor)
+        ? window.pernambucoQuestionBank.nextQuestion(state.study.adminCursor, subjectFilter)
         : window.studyQuestionBank.nextQuestion(state.study.challengeCursor, state.study.seed);
     if (isLoan) state.study.financeCursor = question.nextCursor;
     else if (isAdminPractice) state.study.adminCursor = question.nextCursor;
@@ -732,16 +847,16 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
       state.study.challengeCursor = question.nextCursor;
       updateLibraryCounter();
     }
-    activeFinanceQuestion = { question, purpose, loanOffer };
+    activeFinanceQuestion = { question, purpose, loanOffer, subjectFilter };
     byId("finance-teacher-hint-button").disabled = false;
-    byId("finance-teacher-hint-button").textContent = "💡 Pedir dica à professora";
+    byId("finance-teacher-hint-button").textContent = "🧑‍🏫 Pedir dica da professora";
     byId("finance-teacher-hint").classList.add("hidden");
     updateTeacherSupport();
     selectedAnswer = null;
     byId("finance-subject").textContent = question.subject;
     byId("finance-sequence").textContent = isLoan
       ? `JUROS · DESAFIO ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`
-      : isAdminPractice ? `CPU/PE · ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`
+      : isAdminPractice ? "QUESTÃO AUTORAL · AGENTE ADMINISTRATIVO"
         : `ASSUNTOS VARIADOS · ${formatNumber(question.nextCursor)} DE ${formatNumber(question.poolSize)}`;
     byId("finance-title").textContent = isLoan ? "Desafio para liberar crédito" : "Desafio de estudos";
     byId("finance-icon").textContent = isLoan
@@ -749,11 +864,34 @@ function showFinanceQuestion(purpose, preferredMethod, loanOffer = null) {
       : "📚";
     byId("finance-intro").textContent = purpose === "loan"
       ? `Você pediu ${formatBRL(loanOffer.amountCents)} com ${loanOffer.method === "simple" ? "juros simples" : "juros compostos"}. Resolva o desafio desse tipo de juros para liberar o crédito.`
-      : "Os desafios alternam entre Matemática, Português, Ciências, Geografia, História, Meio Ambiente e Cidadania.";
+      : isAdminPractice
+        ? "Questão autoral para praticar conteúdos de provas anteriores. Consulte a prova oficial de referência abaixo."
+        : "Os desafios alternam entre Matemática, Português, Ciências, Geografia, História, Meio Ambiente e Cidadania.";
+    const referencePanel = byId("finance-question-reference");
+    referencePanel.classList.toggle("hidden", !isAdminPractice);
+    if (isAdminPractice) {
+      const reference = question.reference;
+      const hasReference = Boolean(reference && reference.url);
+      byId("finance-question-difficulty").textContent = `Nível ${question.difficulty || "Básica"}`;
+      byId("finance-question-topic").textContent = `Tema: ${question.topic || question.subject}`;
+      byId("finance-question-exam").textContent = hasReference
+        ? `${reference.exam} · ${reference.year}`
+        : "Exercício de fixação autoral";
+      byId("finance-question-board").textContent = hasReference
+        ? `${reference.board} · ${reference.city}`
+        : "Sem banca ou cidade: não vinculado a uma prova específica.";
+      const sourceLink = byId("finance-question-source-link");
+      sourceLink.classList.toggle("hidden", !hasReference);
+      sourceLink.href = hasReference ? reference.url : "#";
+      byId("finance-question-reference-note").textContent = hasReference
+        ? "Enunciado autoral; não é transcrição da prova indicada."
+        : "Exercício autoral de fixação; não é atribuído a uma banca ou prova específica.";
+    }
     byId("finance-question").textContent = question.question;
     byId("finance-feedback").textContent = "";
     byId("finance-feedback").className = "quiz-feedback";
     byId("finance-answer-key").classList.add("hidden");
+    byId("finance-next-question").classList.add("hidden");
     byId("finance-submit").disabled = true;
     const options = byId("finance-options");
     options.replaceChildren();
@@ -829,6 +967,8 @@ function requestLoan(event) {
 function closeFinanceQuestion() {
   byId("finance-modal").classList.add("hidden");
   byId("finance-modal").setAttribute("aria-hidden", "true");
+  byId("finance-question-reference").classList.add("hidden");
+  byId("finance-next-question").classList.add("hidden");
   byId("finance-teacher-offer").classList.add("hidden");
   byId("finance-teacher-hint-button").classList.add("hidden");
   byId("finance-teacher-hint").classList.add("hidden");
@@ -839,19 +979,33 @@ function closeFinanceQuestion() {
 function updateTeacherSupport() {
   const employed = state.payroll.teacherCount > 0;
   for (const prefix of ["quiz", "finance"]) {
-    byId(`${prefix}-teacher-offer`).classList.toggle("hidden", employed || state.education.consecutiveMistakes < 5);
-    byId(`${prefix}-teacher-hint-button`).classList.toggle("hidden", !employed);
+    const question = prefix === "quiz" ? activeQuiz : activeFinanceQuestion?.question;
+    const matchesSubject = question?.subject?.toLocaleUpperCase("pt-BR") === state.payroll.teacherSubject;
+    const offer = byId(`${prefix}-teacher-offer`);
+    const showOffer = !employed && state.education.consecutiveMistakes >= 5;
+    const wasHidden = offer.classList.contains("hidden");
+    offer.classList.toggle("hidden", !showOffer);
+    byId(`${prefix}-teacher-hint-button`).classList.toggle("hidden", !employed || !matchesSubject);
+    const scopeNote = byId(`${prefix}-teacher-scope-note`);
+    scopeNote.classList.toggle("hidden", !employed || !question || matchesSubject);
+    scopeNote.textContent = employed && question && !matchesSubject
+      ? `Sua professora é de ${state.payroll.teacherSubject}; as dicas aparecem nas questões dessa matéria.` : "";
+    if (matchesSubject) byId(`${prefix}-teacher-hint-button`).textContent = `🧑‍🏫 Pedir dica de ${question.subject}`;
+    if (showOffer && wasHidden && question) {
+      const select = byId(`${prefix}-teacher-subject`);
+      const currentSubject = question.subject.toLocaleUpperCase("pt-BR");
+      if ([...select.options].some((option) => option.value === currentSubject)) select.value = currentSubject;
+    }
   }
 }
 
 function registerWrongAnswer(modal, feedback) {
-  refreshDailyStudyProgress();
-  state.study.dailyPerfect = false;
   state.money -= 30000;
   state.education.consecutiveMistakes++;
   recordTransaction("Penalidade por resposta incorreta", -30000);
   playAlertSound("wrong");
   feedback.textContent = `Resposta incorreta: foram descontados R$ 300,00. Erros seguidos: ${state.education.consecutiveMistakes}. Tente novamente.`;
+  if (state.education.consecutiveMistakes === 3) showToast("Três erros seguidos: reveja o gabarito e a explicação. Seus acertos e insumos continuam intactos.");
   feedback.className = "quiz-feedback";
   byId(`${modal}-answer-key`).classList.remove("hidden");
   selectedAnswer = null;
@@ -878,38 +1032,32 @@ function revealAnswer(modal) {
 }
 
 function grantQuestionReward() {
-  refreshDailyStudyProgress();
-  if (state.study.dailyPerfect) state.study.dailyCorrect++;
   const rewardCents = state.simulation.questionRewardCents;
   state.money += rewardCents;
+  state.materials += 2;
   recordTransaction("Recompensa por resposta correta", rewardCents);
   save();
   updateEconomyDisplays();
+  byId("materials-value").textContent = formatNumber(state.materials);
   return rewardCents;
-}
-
-function refreshDailyStudyProgress() {
-  const today = `${state.month}-${state.day}`;
-  if (state.study.dailyDate !== today) {
-    state.study.dailyDate = today;
-    state.study.dailyCorrect = 0;
-    state.study.dailyPerfect = true;
-  }
 }
 
 function hireTeacher(modal) {
   if (!requireLiveCity()) return;
   if (state.payroll.teacherCount > 0 || state.education.consecutiveMistakes < 5) return;
+  const subject = byId(`${modal}-teacher-subject`).value;
+  if (!subject) return;
   state.payroll.teacherCount = 1;
+  state.payroll.teacherSubject = subject;
+  state.payroll.teacherWeeklySalaryCents = 0;
   state.education.consecutiveMistakes = 0;
   byId(`${modal}-teacher-offer`).classList.add("hidden");
-  byId(`${modal}-teacher-hint-button`).classList.remove("hidden");
-  recordTransaction("Contratação de professora — salário semanal", 0);
+  recordTransaction(`Contrata\u00e7\u00e3o de professora de ${subject}`, 0);
   updatePayrollDisplay();
+  updateTeacherSupport();
   save();
-  showToast("Professora contratada! Ela recebe R$ 800,00 por semana e pode dar uma dica em cada desafio.");
+  showToast(`Professora de ${subject} contratada! Ela dar\u00e1 dicas nessa mat\u00e9ria; sal\u00e1rio: ${formatBRL(state.payroll.teacherDailySalaryCents)} por dia.`);
 }
-
 function declineTeacher(modal) {
   if (!requireLiveCity()) return;
   state.education.consecutiveMistakes = 0;
@@ -920,7 +1068,8 @@ function declineTeacher(modal) {
 function requestTeacherHint(modal) {
   if (!requireLiveCity()) return;
   const question = modal === "quiz" ? activeQuiz : activeFinanceQuestion?.question;
-  if (!question || state.payroll.teacherCount === 0) return;
+  if (!question || state.payroll.teacherCount === 0
+    || question.subject.toLocaleUpperCase("pt-BR") !== state.payroll.teacherSubject) return;
   const used = modal === "quiz" ? activeQuiz.hintUsed : activeFinanceQuestion.hintUsed;
   if (used) return;
 
@@ -932,15 +1081,20 @@ function requestTeacherHint(modal) {
     "HISTÓRIA": "Repare nas datas, na ordem dos acontecimentos e no contexto da época.",
     "MEIO AMBIENTE": "Considere como cada alternativa afeta os recursos naturais e os seres vivos.",
     "CIDADANIA": "Pense no bem comum, nos direitos das pessoas e nos serviços da comunidade.",
+    "INFORM\u00c1TICA": "Identifique para que serve o recurso citado e o efeito de cada comando antes de comparar as alternativas.",
+    "ADMINISTRA\u00c7\u00c3O P\u00daBLICA": "Procure o princ\u00edpio, a compet\u00eancia ou a etapa administrativa que se aplica ao caso.",
+    "ARQUIVOLOGIA": "Pense no ciclo de vida do documento, em sua frequ\u00eancia de uso e na forma correta de organiz\u00e1-lo.",
+    "GEST\u00c3O DE MATERIAIS": "Acompanhe a necessidade, a entrada, o armazenamento e a sa\u00edda do material; descubra qual etapa a quest\u00e3o descreve.",
+    "GEST\u00c3O DE PESSOAS": "Identifique se a situa\u00e7\u00e3o trata de selecionar, integrar, desenvolver ou avaliar pessoas.",
     "MATEMÁTICA FINANCEIRA": "Identifique o capital, a taxa e o prazo. Em juros compostos, a taxa incide sobre o montante acumulado."
   };
-  const subject = question.subject;
+  const subject = question.subject.toLocaleUpperCase("pt-BR");
   const hintId = `${modal}-teacher-hint`;
   const button = byId(`${modal}-teacher-hint-button`);
   byId(hintId).textContent = hints[subject] || "Releia o enunciado, identifique o que está sendo perguntado e elimine as alternativas que não combinam.";
   byId(hintId).classList.remove("hidden");
   button.disabled = true;
-  button.textContent = "Dica usada neste desafio";
+  button.textContent = "Dica usada nesta quest\u00e3o";
   if (modal === "quiz") activeQuiz.hintUsed = true;
   else activeFinanceQuestion.hintUsed = true;
 }
@@ -965,6 +1119,17 @@ function submitFinanceAnswer() {
   updateTeacherSupport();
   state.knowledge += 2;
   const rewardCents = grantQuestionReward();
+  let earnedStudyKit = false;
+  if (purpose === "practice-admin") {
+    state.study.lessonStreak++;
+    if (state.study.lessonStreak >= 3) {
+      state.study.lessonStreak = 0;
+      state.study.educationProjectUnlocked = true;
+      state.study.educationKits++;
+      earnedStudyKit = true;
+    }
+    updateStudyRewardDisplay();
+  }
   feedback.textContent = `Correto! ${question.explanation}`;
   feedback.className = "quiz-feedback correct";
   byId("finance-submit").disabled = true;
@@ -996,6 +1161,20 @@ function submitFinanceAnswer() {
   }
 
   save();
+  if (purpose === "practice-admin") {
+    byId("finance-options").querySelectorAll(".quiz-option").forEach((option, index) => {
+      option.disabled = true;
+      option.classList.toggle("correct", index === question.correctIndex);
+    });
+    feedback.textContent = `Resposta correta! ${question.explanation} Recompensa: ${formatBRL(rewardCents)} e 2 pontos de conhecimento.`;
+    byId("finance-next-question").classList.remove("hidden");
+    render();
+    if (earnedStudyKit) {
+      celebrateStudyKit();
+      showToast("Sequência concluída! Você desbloqueou a Biblioteca Comunitária e ganhou 1 kit de estudo.");
+    }
+    return;
+  }
   window.setTimeout(() => {
     const wasLoan = purpose === "loan";
     closeFinanceQuestion();
@@ -1030,7 +1209,8 @@ function submitAnswer() {
     }, 850);
     return;
   }
-  if (state.money < selectedBuilding.cost || state.materials < selectedBuilding.material) {
+  if (state.money < selectedBuilding.cost || state.materials < selectedBuilding.material
+    || (selectedBuilding.specialMaterial && state.study[selectedBuilding.specialMaterial] < selectedBuilding.specialAmount)) {
     closeQuiz();
     showToast("Os recursos mudaram e não são mais suficientes.");
     render();
@@ -1047,8 +1227,10 @@ function submitAnswer() {
   }
   state.money -= selectedBuilding.cost;
   state.materials -= selectedBuilding.material;
+  if (selectedBuilding.specialMaterial) state.study[selectedBuilding.specialMaterial] -= selectedBuilding.specialAmount;
   const item = { id: selectedBuilding.id, name: selectedBuilding.name, icon: selectedBuilding.icon, type: "building", effect: selectedBuilding.effect, cell };
   state.built.push(item);
+  const placedBuildingId = selectedBuilding.id;
   recordTransaction(`Construção: ${selectedBuilding.name}`, -selectedBuilding.cost);
   if (item.effect === "homes") state.population += 8;
   if (item.effect === "happiness") state.happiness = Math.min(100, state.happiness + 8);
@@ -1064,6 +1246,13 @@ function submitAnswer() {
     closeQuiz();
     showToast(`${selectedBuilding.name} construído! Você ganhou ${formatBRL(rewardCents)} e sua cidade está crescendo.`);
     render();
+    const newBuildingTile = [...byId("city-map").querySelectorAll("[data-building-id]")]
+      .find((tile) => tile.dataset.buildingId === placedBuildingId);
+    animateUiElement(newBuildingTile?.querySelector(".tile-icon"), [
+      { transform: "translateY(8px) scale(.65)", opacity: 0 },
+      { transform: "translateY(-2px) scale(1.12)", opacity: 1, offset: 0.75 },
+      { transform: "translateY(0) scale(1)", opacity: 1 }
+    ], 550);
   }, 850);
 }
 
@@ -1105,6 +1294,19 @@ function closeAuthModal() {
 function closeInstallModal() {
   byId("install-modal").classList.add("hidden");
   byId("install-modal").setAttribute("aria-hidden", "true");
+}
+
+function openStudyHelp() {
+  const modal = byId("study-help-modal");
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  byId("close-study-help").focus();
+}
+
+function closeStudyHelp() {
+  byId("study-help-modal").classList.add("hidden");
+  byId("study-help-modal").setAttribute("aria-hidden", "true");
+  byId("open-study-help").focus();
 }
 
 function isInstalledAsWebApp() {
@@ -1367,17 +1569,17 @@ byId("loan-form").addEventListener("submit", requestLoan);
 ["loan-amount", "loan-method", "loan-term"].forEach((id) => {
   byId(id).addEventListener("change", updateLoanPreview);
 });
-byId("practice-interest").addEventListener("click", () => showFinanceQuestion("practice-admin", null));
+byId("practice-interest").addEventListener("click", startAdminPractice);
+byId("study-subject-filter").addEventListener("change", updateSelectedQuestionCount);
+byId("start-study-practice").addEventListener("click", startAdminPractice);
+byId("open-study-help").addEventListener("click", openStudyHelp);
+byId("close-study-help").addEventListener("click", closeStudyHelp);
+byId("study-help-done").addEventListener("click", closeStudyHelp);
+byId("study-help-modal").addEventListener("click", (event) => {
+  if (event.target === byId("study-help-modal")) closeStudyHelp();
+});
 byId("buy-building-materials").addEventListener("click", () => {
   if (!requireLiveCity()) return;
-  refreshDailyStudyProgress();
-  if (!state.study.dailyPerfect || state.study.dailyCorrect < 10) {
-    const remaining = Math.max(0, 10 - state.study.dailyCorrect);
-    showToast(state.study.dailyPerfect
-      ? `Acerte mais ${remaining} questão(ões) hoje sem errar para liberar a compra.`
-      : "Você errou uma questão hoje. A compra de insumos será liberada amanhã, após 10 acertos sem erros.");
-    return;
-  }
   if (state.money < 10000) { showToast(`Faltam ${formatBRL(10000 - state.money)} no orçamento para comprar os insumos.`); return; }
   state.money -= 10000;
   state.materials += 20;
@@ -1388,6 +1590,10 @@ byId("buy-building-materials").addEventListener("click", () => {
 byId("close-finance").addEventListener("click", closeFinanceQuestion);
 byId("finance-submit").addEventListener("click", submitFinanceAnswer);
 byId("finance-answer-key").addEventListener("click", () => revealAnswer("finance"));
+byId("finance-next-question").addEventListener("click", () => {
+  if (activeFinanceQuestion?.purpose !== "practice-admin") return;
+  showFinanceQuestion("practice-admin", null, null, activeFinanceQuestion.subjectFilter);
+});
 byId("finance-hire-teacher").addEventListener("click", () => hireTeacher("finance"));
 byId("finance-decline-teacher").addEventListener("click", () => declineTeacher("finance"));
 byId("finance-teacher-hint-button").addEventListener("click", () => requestTeacherHint("finance"));
@@ -1396,6 +1602,7 @@ byId("finance-modal").addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (!byId("study-help-modal").classList.contains("hidden")) closeStudyHelp();
   closeQuiz();
   closeFinanceQuestion();
   closeAuthModal();
@@ -1471,6 +1678,8 @@ byId("sound-toggle").addEventListener("click", (event) => {
   if (soundEnabled) playAlertSound("correct");
   showToast(soundEnabled ? "Sons ativados." : "Sons desativados.");
 });
+populateStudySubjects();
+populateTeacherSubjects();
 render();
 setAccountButton();
 updateSoundToggle();

@@ -10,14 +10,15 @@ O jogo usa Supabase Auth com e-mail e senha e salva uma cidade por conta. O prog
    - [`supabase/migrations/20261124213000_create_study_game.sql`](./supabase/migrations/20261124213000_create_study_game.sql)
 3. Execute também [`supabase/migrations/20261124230000_add_realtime_city_clock.sql`](./supabase/migrations/20261124230000_add_realtime_city_clock.sql), depois das duas migrações acima.
 4. Execute [`supabase/migrations/20261125151000_add_city_simulation.sql`](./supabase/migrations/20261125151000_add_city_simulation.sql) para ativar o consumo e as contas mensais.
-5. Em **Project Settings → API**, copie a Project URL e a chave pública **Publishable key** (ou a chave legada `anon`).
-6. Preencha `url` e `anonKey` em [`supabase-config.js`](./supabase-config.js). Essas credenciais públicas podem estar no navegador; nunca use a `service_role` ou outra chave secreta no frontend.
-7. Sirva a pasta por HTTP local, por exemplo com `python -m http.server 8000`, e abra `http://localhost:8000`. Não abra o arquivo com `file://`.
-8. Clique no avatar e crie uma conta ou entre. Se a confirmação de e-mail estiver habilitada no Supabase, confirme o endereço antes de entrar.
+5. Execute [`supabase/migrations/20261126170000_add_subject_teacher_daily_salary.sql`](./supabase/migrations/20261126170000_add_subject_teacher_daily_salary.sql) para ativar a professora por matéria e o salário diário.
+6. Em **Project Settings → API**, copie a Project URL e a chave pública **Publishable key** (ou a chave legada `anon`).
+7. Preencha `url` e `anonKey` em [`supabase-config.js`](./supabase-config.js). Essas credenciais públicas podem estar no navegador; nunca use a `service_role` ou outra chave secreta no frontend.
+8. Sirva a pasta por HTTP local, por exemplo com `python -m http.server 8000`, e abra `http://localhost:8000`. Não abra o arquivo com `file://`.
+9. Clique no avatar e crie uma conta ou entre. Se a confirmação de e-mail estiver habilitada no Supabase, confirme o endereço antes de entrar.
 
 ## Dados e segurança
 
-- `public.cities` guarda o nome, a versão do formato e o estado JSON da cidade de cada jogador. O orçamento (inclusive saldo negativo), folha semanal, equipe de professores, calendário de desastres, contagem de erros, conta municipal, empréstimo e cursores das bibliotecas acompanham esse estado. A preferência de áudio fica apenas neste dispositivo.
+- `public.cities` guarda o nome, a versão do formato e o estado JSON da cidade de cada jogador. O orçamento (inclusive saldo negativo), folha semanal, professora por matéria com salário diário configurável, calendário de desastres, contagem de erros, conta municipal, empréstimo e cursores das bibliotecas acompanham esse estado. A preferência de áudio fica apenas neste dispositivo.
 - Row Level Security (RLS) limita a leitura ao proprietário. As gravações são feitas pelas RPCs autenticadas `save_city_state()` e `sync_city_clock()`; o cliente não tem permissão direta de inserir ou atualizar linhas de `cities`.
 - `save_city_state()` preserva a data e os contadores de rotina do servidor, aplica alterações de saldo como diferenças sobre a última versão sincronizada e usa IDs idempotentes para não reaplicar um salvamento se a resposta da rede se perder.
 - A migração recria `save_city_state()` com os nomes exatos dos parâmetros usados pelo cliente e envia `NOTIFY pgrst, 'reload schema'`. Se aparecer “Could not find the function ... in the schema cache”, execute novamente a migração completa no SQL Editor e aguarde a atualização do cache; confirme que a função existe consultando `pg_get_function_arguments()` antes de tentar entrar novamente.

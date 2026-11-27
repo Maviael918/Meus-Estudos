@@ -26,7 +26,8 @@
         <nav class="main-nav" aria-label="Navegação principal">
           <a class="nav-link active" href="#cidade"><span>▦</span> Minha cidade</a>
           <a class="nav-link" href="#construir"><span>⌂</span> Construir</a>
-          <a class="nav-link" href="#banco"><span>🏦</span> Banco Central</a>
+          <a class="nav-link" href="#estudos"><span>📚</span> Estudar</a>
+          <a class="nav-link" href="#banco"><span>🏦</span> Banco</a>
           <a class="nav-link" href="#relatorio"><span>▤</span> Relatórios</a>
         </nav>
         <div class="sidebar-bottom">
@@ -70,7 +71,7 @@
             <div class="stat-icon people">♟</div><div class="stat-info"><span>POPULAÇÃO</span><strong id="population-value">24</strong><em>+4 este mês</em></div><span class="stat-more">•••</span>
           </article>
           <article class="stat-card">
-            <div class="stat-icon materials">▧</div><div class="stat-info"><span>MATERIAIS DE CONSTRUÇÃO</span><strong id="materials-value">120</strong><em>Unidades de madeira, tijolos e outros itens</em><button class="materials-purchase-button" id="buy-building-materials" type="button" title="Requer 10 acertos sem erros no dia">🧱 Comprar 20 · R$ 100,00</button><small class="materials-purchase-note">Libera após 10 acertos sem erros hoje.</small></div><span class="stat-more">•••</span>
+            <div class="stat-icon materials">▧</div><div class="stat-info"><span>MATERIAIS DE CONSTRUÇÃO</span><strong id="materials-value">120</strong><em>Unidades de madeira, tijolos e outros itens</em><button class="materials-purchase-button" id="buy-building-materials" type="button" title="Cada resposta correta rende 2 materiais; compre mais quando quiser">🧱 Comprar 20 · R$ 100,00</button><small class="materials-purchase-note">Cada acerto rende +2 materiais. Compre 20 por R$ 100,00 quando quiser.</small></div><span class="stat-more">•••</span>
           </article>
           <article class="stat-card">
             <div class="stat-icon happiness">♡</div><div class="stat-info"><span>FELICIDADE</span><strong id="happiness-value">72<small>%</small></strong><em>↑ Muito bem!</em></div><span class="stat-more">•••</span>
@@ -80,17 +81,19 @@
         <section class="payroll-card panel" aria-label="Folha semanal da prefeitura">
           <div class="payroll-heading">
             <div><p class="eyebrow">EQUIPE MUNICIPAL</p><h2>Funcionários da prefeitura</h2></div>
-            <span class="payroll-badge">PAGAMENTO SEMANAL</span>
+            <span class="payroll-badge">FOLHA DOS FUNCIONÁRIOS · SEMANAL</span>
           </div>
           <div class="payroll-grid">
             <div><span>Funcionários</span><strong id="payroll-employee-count">3</strong></div>
             <div><span>Salário por pessoa</span><strong id="payroll-weekly-wage">R$ 500,00</strong></div>
             <div><span>Professores contratados</span><strong id="payroll-teacher-count">0</strong></div>
-            <div><span>Total da folha</span><strong id="payroll-weekly-total">R$ 1.500,00</strong></div>
+            <div><span>Matéria da professora</span><strong id="payroll-teacher-subject">Não contratada</strong></div>
+            <div><span>Salário diário da professora</span><strong id="payroll-teacher-daily-salary">R$ 114,29</strong></div>
+            <div><span>Total semanal dos funcionários</span><strong id="payroll-weekly-total">R$ 1.500,00</strong></div>
             <div><span>Próximo pagamento</span><strong id="payroll-next-payment">Em 7 dias</strong></div>
             <div><span>Alerta de desastre</span><strong id="next-disaster-counter">Possível em 7 dias</strong></div>
           </div>
-          <p class="payroll-note">O calendário usa a data do servidor no horário de Brasília; receitas, salários, desastres e parcelas vencem automaticamente, inclusive após períodos sem acesso. Respostas erradas custam R$ 300,00; após 5 erros seguidos, a prefeitura pode contratar uma professora por R$ 800,00 semanais.</p>
+          <p class="payroll-note">O calendário usa a data do servidor no horário de Brasília; receitas, salários, desastres e parcelas vencem automaticamente, inclusive após períodos sem acesso. Respostas erradas custam R$ 300,00; após 5 erros seguidos, você pode contratar uma professora por matéria; o salário diário é configurável.</p>
         </section>
 
         <section class="simulation-card panel" aria-label="Água, energia e impostos da cidade">
@@ -157,6 +160,48 @@
           </aside>
         </section>
 
+        <section class="study-hub" id="estudos">
+          <div class="section-heading study-hub-heading">
+            <div><p class="eyebrow">APRENDA E FAÇA SUA CIDADE CRESCER</p><h2>Estudos para concursos <span aria-hidden="true">📚</span></h2></div>
+            <span class="bank-educational-badge">QUESTÕES AUTORAIS</span>
+          </div>
+          <div class="study-hub-card panel">
+            <div class="study-hub-copy">
+              <span class="study-hub-icon" aria-hidden="true">📝</span>
+              <div>
+                <h3>Agente Administrativo</h3>
+                <p>Pratique o banco completo de questões autorais. Questões associadas a provas anteriores mostram banca, cidade e fonte oficial; exercícios de fixação também ficam identificados.</p>
+                <div class="study-hub-meta"><span><strong id="study-question-count">Carregando questões…</strong></span><span>Acerto: dinheiro + 2 insumos + 2 pontos de conhecimento</span></div>
+                <div class="study-reward-widget">
+                  <svg class="study-streak-svg" viewBox="0 0 142 36" aria-hidden="true">
+                    <path class="study-streak-line" d="M20 18h50" />
+                    <circle class="study-streak-step" id="study-step-1" cx="20" cy="18" r="8" />
+                    <path class="study-streak-check" d="m16 18 3 3 5-6" />
+                    <circle class="study-streak-step" id="study-step-2" cx="45" cy="18" r="8" />
+                    <path class="study-streak-check" d="m41 18 3 3 5-6" />
+                    <circle class="study-streak-step" id="study-step-3" cx="70" cy="18" r="8" />
+                    <path class="study-streak-check" d="m66 18 3 3 5-6" />
+                    <g class="study-kit-badge" id="study-kit-badge" transform="translate(110 18)">
+                      <circle r="14" />
+                      <path class="study-book" d="M-8 -7h5c2 0 3 1 3 3v11c0-2-1-3-3-3h-5z M8 -7H3C1 -7 0 -6 0 -4v11c0-2 1-3 3-3h5z" />
+                    </g>
+                  </svg>
+                  <p class="study-reward-progress" id="study-reward-progress" aria-live="polite">Acerte 3 questões para ganhar um kit de estudo.</p>
+                </div>
+              </div>
+            </div>
+            <div class="study-hub-actions">
+              <label class="auth-label" for="study-subject-filter">Escolha uma matéria</label>
+              <select class="study-subject-select" id="study-subject-filter">
+                <option value="">Todas as matérias</option>
+              </select>
+              <button class="primary-button study-start-button" id="start-study-practice" type="button">Começar a estudar <span>→</span></button>
+              <button class="text-button study-help-button" id="open-study-help" type="button">? Entenda o jogo de estudos</button>
+              <p class="study-access-note" id="study-access-note" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+
         <section class="bank-section" id="banco">
           <div class="section-heading bank-section-heading">
             <div><p class="eyebrow">FINANÇAS DA CIDADE</p><h2>Banco Central da Cidade <span aria-hidden="true">🏦</span></h2></div>
@@ -204,12 +249,12 @@
             <aside class="bank-side-column">
               <section class="bank-training-card">
                 <div class="training-icon">📚</div>
-                <p class="eyebrow">TRILHA CPU/PE · FCC</p>
+                <p class="eyebrow">TRILHA PARA CONCURSOS</p>
                 <h3>Agente Administrativo</h3>
-                <p>Pratique Português, Raciocínio Lógico, Informática, Administração Pública, Gestão de Pessoas e mais. Questões autorais alinhadas ao conteúdo do edital, com fonte indicada.</p>
-                <div class="library-counter"><span>Desafios variados</span><strong id="library-counter">56</strong></div>
-                <button class="text-button training-button" id="practice-interest" type="button">Praticar matérias do concurso <span>→</span></button>
-                <a class="text-button training-button" href="https://www.diariomunicipal.com.br/amupe/download/AC4A8AB6" target="_blank" rel="noopener">Ver edital e conteúdo programático ↗</a>
+                <p>Questões autorais de Português, Matemática, Raciocínio Lógico, Informática e matérias administrativas. O banco combina exercícios de fixação com questões que indicam provas oficiais de referência.</p>
+                <div class="library-counter"><span>Questões no banco</span><strong id="library-counter">0</strong></div>
+                <button class="text-button training-button" id="practice-interest" type="button">Continuar praticando <span>→</span></button>
+                <a class="text-button training-button" href="https://www.diariomunicipal.com.br/amupe/pesquisar" target="_blank" rel="noopener">Buscar edital no Diário Oficial da AMUPE ↗</a>
                 <p class="bank-feedback" id="bank-feedback" aria-live="polite"></p>
               </section>
               <section class="bank-transactions panel">
@@ -232,6 +277,24 @@
       </main>
     </div>
 
+    <div class="modal-backdrop hidden" id="study-help-modal" role="dialog" aria-modal="true" aria-labelledby="study-help-title" aria-hidden="true">
+      <div class="quiz-card study-help-card">
+        <button class="modal-close" id="close-study-help" type="button" aria-label="Fechar explicação">×</button>
+        <div class="quiz-kicker"><span class="quiz-subject">GUIA DO JOGO</span><span>APRENDER E CONSTRUIR</span></div>
+        <div class="quiz-building-icon" aria-hidden="true">📚</div>
+        <h2 id="study-help-title">Entenda o jogo de estudos</h2>
+        <p class="quiz-intro">A ideia é aprender praticando: cada desafio ajuda você a estudar e faz sua cidade avançar.</p>
+        <div class="study-help-content">
+          <section><h3>1. Escolha como estudar</h3><p>Selecione uma matéria ou deixe ?Todas as matérias? e toque em <strong>Começar a estudar</strong>. Responda uma questão por vez e leia a explicação depois de cada resposta.</p></section>
+          <section><h3>2. Ganhe recompensas</h3><p>Cada resposta correta dá dinheiro para o orçamento da cidade e <strong>2 pontos de conhecimento</strong>. O conhecimento aparece no relatório e ajuda a cidade a crescer.</p></section>
+          <section><h3>3. Acumule acertos</h3><p>Acerte <strong>3 questões acumuladas</strong> na área Estudar para desbloquear a Biblioteca Comunitária e ganhar 1 kit. Depois, cada 3 novos acertos rendem outro kit. Errar não apaga seu progresso.</p></section>
+          <section><h3>4. Use o kit na cidade</h3><p>A Biblioteca precisa de dinheiro, materiais de construção comuns e <strong>1 kit de estudo</strong>. Construí-la consome o kit e acrescenta 10 pontos de conhecimento à cidade.</p></section>
+          <section><h3>5. Compre insumos comuns</h3><p>Cada resposta correta rende <strong>2 materiais comuns</strong>, e você pode comprar mais 20 por R$ 100,00 quando tiver saldo. Cada erro desconta R$ 300,00. Após 3 erros seguidos, reveja o gabarito e a explicação; compras e acertos acumulados não são bloqueados.</p></section>
+        </div>
+        <p class="study-help-note">Seu progresso e suas recompensas ficam salvos na cidade quando você entra na sua conta.</p>
+        <button class="primary-button quiz-submit" id="study-help-done" type="button">Entendi, vamos estudar</button>
+      </div>
+    </div>
     <div class="modal-backdrop hidden" id="quiz-modal" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
       <div class="quiz-card">
         <button class="modal-close" id="close-quiz" aria-label="Fechar desafio">×</button>
@@ -242,11 +305,14 @@
         <div class="question-box"><p id="quiz-question"></p><div id="quiz-options" class="quiz-options"></div></div>
         <p class="quiz-feedback" id="quiz-feedback" aria-live="polite"></p>
         <button class="text-button answer-key-button hidden" id="quiz-answer-key" type="button">Ver gabarito e explicação</button>
-        <button class="text-button teacher-hint-button hidden" id="quiz-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
+        <button class="text-button teacher-hint-button hidden" id="quiz-teacher-hint-button" type="button">🧑‍🏫 Pedir dica da professora</button>
+        <p class="teacher-scope-note hidden" id="quiz-teacher-scope-note" aria-live="polite"></p>
         <p class="teacher-hint hidden" id="quiz-teacher-hint" aria-live="polite"></p>
         <section class="teacher-offer hidden" id="quiz-teacher-offer">
           <strong>📚 Vamos reforçar a equipe?</strong>
-          <p>Você errou 5 respostas seguidas. Contratar uma professora custa R$ 800,00 por semana e ela poderá dar uma dica em cada desafio.</p>
+          <p>Você errou 5 respostas seguidas. Escolha a matéria da professora. Ela dá dicas sem revelar o gabarito; o salário diário está nas configurações da cidade.</p>
+          <label class="teacher-subject-label" for="quiz-teacher-subject">Matéria da professora</label>
+          <select class="teacher-subject-select" id="quiz-teacher-subject"></select>
           <div><button class="primary-button teacher-hire" id="quiz-hire-teacher" type="button">Contratar professora</button><button class="text-button teacher-decline" id="quiz-decline-teacher" type="button">Agora não</button></div>
         </section>
         <button class="primary-button quiz-submit" id="quiz-submit" disabled>Confirmar resposta <span>→</span></button>
@@ -297,6 +363,8 @@
         <input class="auth-input" id="water-consumption-setting" type="number" min="1" max="1000" step="1" required>
         <label class="auth-label" for="energy-consumption-setting">Consumo diário de energia (moradores por ponto de reserva)</label>
         <input class="auth-input" id="energy-consumption-setting" type="number" min="1" max="1000" step="1" required>
+        <label class="auth-label" for="teacher-daily-salary-setting">Salário diário da professora (R$)</label>
+        <input class="auth-input" id="teacher-daily-salary-setting" type="number" min="0" max="1000000" step="0.01" required>
         <p class="auth-feedback" id="simulation-settings-feedback" aria-live="polite"></p>
         <button class="primary-button quiz-submit" id="save-simulation-settings" type="submit">Salvar configurações</button>
       </form>
@@ -309,13 +377,25 @@
         <h2 id="finance-title">Desafio do Banco Central</h2>
         <p class="quiz-intro" id="finance-intro">Resolva o cálculo para avançar.</p>
         <div class="question-box"><p id="finance-question"></p><div id="finance-options" class="quiz-options"></div></div>
+        <section class="question-reference hidden" id="finance-question-reference" aria-label="Dificuldade e fonte da questão">
+          <span class="question-difficulty" id="finance-question-difficulty"></span>
+          <p id="finance-question-topic"></p>
+          <p><strong>Prova de referência:</strong> <span id="finance-question-exam"></span></p>
+          <p><strong>Banca e local:</strong> <span id="finance-question-board"></span></p>
+          <a id="finance-question-source-link" href="#" target="_blank" rel="noopener">Consultar fonte oficial ↗</a>
+          <p class="question-reference-note" id="finance-question-reference-note">Enunciado autoral; não é transcrição da prova indicada.</p>
+        </section>
         <p class="quiz-feedback" id="finance-feedback" aria-live="polite"></p>
         <button class="text-button answer-key-button hidden" id="finance-answer-key" type="button">Ver gabarito e explicação</button>
-        <button class="text-button teacher-hint-button hidden" id="finance-teacher-hint-button" type="button">💡 Pedir dica à professora</button>
+        <button class="primary-button quiz-submit hidden" id="finance-next-question" type="button">Próxima questão <span>→</span></button>
+        <button class="text-button teacher-hint-button hidden" id="finance-teacher-hint-button" type="button">🧑‍🏫 Pedir dica da professora</button>
+        <p class="teacher-scope-note hidden" id="finance-teacher-scope-note" aria-live="polite"></p>
         <p class="teacher-hint hidden" id="finance-teacher-hint" aria-live="polite"></p>
         <section class="teacher-offer hidden" id="finance-teacher-offer">
           <strong>📚 Vamos reforçar a equipe?</strong>
-          <p>Você errou 5 respostas seguidas. Contratar uma professora custa R$ 800,00 por semana e ela poderá dar uma dica em cada desafio.</p>
+          <p>Você errou 5 respostas seguidas. Escolha a matéria da professora. Ela dá dicas sem revelar o gabarito; o salário diário está nas configurações da cidade.</p>
+          <label class="teacher-subject-label" for="finance-teacher-subject">Matéria da professora</label>
+          <select class="teacher-subject-select" id="finance-teacher-subject"></select>
           <div><button class="primary-button teacher-hire" id="finance-hire-teacher" type="button">Contratar professora</button><button class="text-button teacher-decline" id="finance-decline-teacher" type="button">Agora não</button></div>
         </section>
         <button class="primary-button quiz-submit" id="finance-submit" type="button" disabled>Confirmar resposta <span>→</span></button>
